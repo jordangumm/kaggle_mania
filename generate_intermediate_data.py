@@ -14,18 +14,16 @@ games = pd.read_csv('data/original/RegularSeasonDetailedResults.csv')
 team_names = pd.read_csv('data/original/Teams.csv')
 
 
-def get_per_minute_stat(team_wins, team_losses, stat, mp):
+def get_per_minute_stat(team_wins, team_losses, stat):
     """
     """
-    total = team_wins['W{}'.format(stat)].sum() + team_losses['L{}'.format(stat)].sum()
-    return float(total) / float(mp)
+    return team_wins['W{}'.format(stat)].sum() + team_losses['L{}'.format(stat)].sum()
 
 
-def get_per_minute_opp_stat(team_wins, team_losses, stat, mp):
+def get_per_minute_opp_stat(team_wins, team_losses, stat):
     """
     """
-    total = team_wins['L{}'.format(stat)].sum() + team_losses['W{}'.format(stat)].sum()
-    return float(total) / float(mp)
+    return team_wins['L{}'.format(stat)].sum() + team_losses['W{}'.format(stat)].sum()
 
 
 def get_minutes_played(team_wins, team_losses):
@@ -42,13 +40,11 @@ def get_per_minute_stats(team_wins, team_losses):
     """
     output = {}
 
-    minutes_played = get_minutes_played(team_wins, team_losses)
-
     for stat in team_wins.keys():
         if stat[0] != 'W' or 'team' in stat or 'loc' in stat: continue
         stat = stat[1:]
-        output['{}'.format(stat)] = get_per_minute_stat(team_wins,team_losses,stat,minutes_played)
-        output['opp_{}'.format(stat)] = get_per_minute_opp_stat(team_wins,team_losses,stat,minutes_played)
+        output['{}'.format(stat)] = get_per_minute_stat(team_wins,team_losses,stat)
+        output['opp_{}'.format(stat)] = get_per_minute_opp_stat(team_wins,team_losses,stat)
     return output
 
 print games.keys()
@@ -63,6 +59,7 @@ for i, season in enumerate(games['Season'].unique()):
         team_losses = season_games[season_games['Lteam'] == team]
 
         team_stats = get_per_minute_stats(team_wins, team_losses)
+        team_stats['minutes_played'] = get_minutes_played(team_wins, team_losses)
         team_stats['w_pct'] = float(len(team_wins)) / float(len(team_losses) + len(team_wins))
         team_stats['kaggle_id'] = team
         team_stats['season'] = season
