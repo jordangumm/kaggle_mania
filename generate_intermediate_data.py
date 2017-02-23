@@ -67,7 +67,7 @@ for i, season in enumerate(games['Season'].unique()):
         if type(output) == type(None):
             output = pd.DataFrame(team_stats, index=[i+k])
         else:
-            output.append(pd.DataFrame(team_stats, index=[i+k]))
+            output = output.append(pd.DataFrame(team_stats, index=[i+k]))
 output_dp = 'data/intermediate/'
 if not os.path.isdir(output_dp):
     os.mkdir(output_dp)

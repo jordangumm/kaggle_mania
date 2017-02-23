@@ -38,7 +38,7 @@ def add_efficient_offensive_production(stats):
     """
     raw_eop = (.76 * ast + pts) * OE
     """
-    stats['oe2'] = (stats['fg'] + stats['ast']) / (stats['fga'] - stats['orb'] + stats['ast'] + stats['tov'])
+    #stats['oe2'] = (stats['fg'] + stats['ast']) / (stats['fga'] - stats['orb'] + stats['ast'] + stats['tov'])
     stats['raw_eop'] = (.76 * stats['ast'] + stats['pts']) * stats['oe2']
     stats['eop'] = stats['raw_eop'] * (np.sum(stats['pts']) / (stats['oe'] * (stats['pts'] + .76 * stats['ast'])))
     return stats
@@ -78,7 +78,7 @@ def add_rebounding_percentages(stats):
 def add_ast_to_tov(stats):
     """
     """
-    stats['ast/tov'] = stats['apm'] / stats['tovpm']
+    stats['ast/tov'] = stats['ast_pm'] / stats['to_pm']
     return stats
 
 
@@ -127,12 +127,6 @@ def create_games(stats, games, season, game_type):
         game = game[1]
         wteam = stats[(stats['kaggle_id'] == game['Wteam']) & (stats['season'] == season)]
         lteam = stats[(stats['kaggle_id'] == game['Lteam']) & (stats['season'] == season)]
-
-        try:
-            print '{} over {}'.format(wteam['team_name'].unique()[0], lteam['team_name'].unique()[0])
-        except:
-            print 'failed to make game for {} over {}'.format(game['Wteam'], game['Lteam'])
-            continue
 
         wkaggle = wteam['kaggle_id'].unique()[0]
         lkaggle = lteam['kaggle_id'].unique()[0]
@@ -197,38 +191,41 @@ def run(game_type):
     adv - pandas DataFrame of yearly advanced metric stats for each team
     """
     if game_type == 'regular_season':
-        games = pd.read_csv('data/original/RegularSeasonCompactResults.csv')
+        games = pd.read_csv('data/original/RegularSeasonDetailedResults.csv')
     elif game_type == 'tourney':
         games = pd.read_csv('data/original/TourneyDetailedResults.csv')
     else:
         sys.exit('{} is an unknown game type'.format(game_type))
 
-    for season in (2010,2011,2012,2013,2014,2015,2016):
-        stats = pd.read_csv('data/intermediate/{}_adv.csv'.format(season))
-        stats = filter_out_nontourney_teams(stats, games[games['Season'] == season])
+    for season in games['Season'].unique():
+        print season
+        stats = pd.read_csv('data/intermediate/team_regular_season_stats.csv')
+        stats = stats[stats['season'] == season]
+        #stats = filter_out_nontourney_teams(stats, games[games['Season'] == season])
 
-        for key in ['team_name', 'opp_2P%', 'opp_TRB', 'FT%', 'season', 'FG%', 'opp_FG%', 'opp_3P%', '2P%', '3P%']:
-            del stats[key] # removing overlapping columns for ease
-        stats = stats.merge(pd.read_csv('data/intermediate/{}_box.csv'.format(season)), on='kaggle_id')
-        stats.columns = map(str.lower, stats.columns)
-        stats = add_ast_to_tov(stats)
-        stats = add_turnovers_per_possession(stats)
-        stats = add_rebounding_percentages(stats)
-        stats = add_pythag_win_expectation(stats)
-        stats = filter_biased_stats(stats)
-        stats = add_offensive_efficiency(stats)
-        stats = add_defensive_efficiency(stats)
-        stats = add_efficient_offensive_production(stats)
+        stats['fg_pct'] = stats['fgm']/stats['fga']
+        stats['fg3_pct'] = stats['fgm3']/stats['fga3']
+        stats['opp_fg_pct'] = stats['opp_fgm']/stats['opp_fga']
+        stats['opp_fg3_pct'] = stats['opp_fgm3']/stats['opp_fga3']
+        stats['ast/to'] = stats['ast']/stats['to']
 
-        ### remove all
-        for biased_stat in ['g','opp_g','fg','pts','mp','opp_mp','fga','drb',
-            'trb','2pa','2p','3p','3pa','ast','orb','tov','opp_pts','opp_tov',
-            'opp_orb','opp_drb','opp_fg','opp_2pa','opp_fga','opp_pf','blk',
-            'stl','ft','fta','opp_ft','opp_fta','opp_3p','pf','opp_2p',
-            'opp_3pa','opp_ast','pts/g','opp_pts/g','opp_blk']:
-            del stats[biased_stat]
+        stats_to_convert = ['fgm','fga','fgm3','fga3','ast','blk','ftm','fta',
+                            'stl','score','or','dr','pf','to']
+        for s in stats_to_convert:
+            stats['{}_pm'.format(s)] = stats['{}'.format(s)]/stats['minutes_played']
+            stats['opp_{}_pm'.format(s)] = stats['opp_{}'.format(s)]/stats['minutes_played']
+            del stats['{}'.format(s)]
+            del stats['opp_{}'.format(s)]
+        del stats['minutes_played']
 
-        stats.to_csv('data/final/{}_adv.csv'.format(season), index=None)
+        #stats = add_turnovers_per_possession(stats)
+        #stats = add_rebounding_percentages(stats)
+        #stats = add_pythag_win_expectation(stats)
+        #stats = add_offensive_efficiency(stats)
+        #stats = add_defensive_efficiency(stats)
+        #stats = add_efficient_offensive_production(stats)
+
+        stats.to_csv('data/final/{}.csv'.format(season), index=None)
 
         create_games(stats, games, season, game_type)
 
