@@ -28,9 +28,9 @@ def add_offensive_efficiency(stats):
     * (Opp ORB / (Opp ORB + Tm DRB)) * (Opp FGA - Opp FG) + Opp TOV))
     """
     stats['oe'] = 100 * stats['pts'] / 0.5 * ((stats['fga'] + 0.4 * stats['fta'] - 1.07 \
-      * (stats['orb'] / (stats['orb'] + stats['opp_drb'])) * (stats['fga'] - stats['fg']) + stats['tov'])
-      + (stats['opp_fga'] + 0.4 * stats['opp_fta'] - 1.07 * (stats['opp_orb'] / (stats['opp_orb'] + stats['drb']))
-      * (stats['opp_fga'] - stats['opp_fg']) + stats['opp_tov']))
+      * (stats['or'] / (stats['or'] + stats['opp_dr'])) * (stats['fga'] - stats['fgm']) + stats['to'])
+      + (stats['opp_fga'] + 0.4 * stats['opp_fta'] - 1.07 * (stats['opp_or'] / (stats['opp_or'] + stats['dr']))
+      * (stats['opp_fga'] - stats['opp_fgm']) + stats['opp_to']))
     return stats
 
 
@@ -49,7 +49,7 @@ def add_defensive_efficiency(stats):
     possessions = FGA + 0.475 x FTA - ORB + TO
     de = (Opponent's Points Allowed/ Opponent's Possessions) x 100
     """
-    opp_pos = stats['opp_fga'] + 0.475 * stats['opp_fta'] - stats['opp_orb'] + stats['opp_tov']
+    opp_pos = stats['opp_fga'] + 0.475 * stats['opp_fta'] - stats['opp_or'] + stats['opp_to']
     stats['de'] = (stats['opp_pts'] / opp_pos) * 100
     return stats
 
@@ -60,7 +60,7 @@ def add_pythag_win_expectation(stats):
     pythag = pts^x / (pts^x + opp_pts^x)
     where x is 16.5 as determined in A Starting Point for Analyzing Basketball
     """
-    stats['pythag'] = stats['ppm']**16.5 / (stats['ppm']**16.5 + stats['opp_ppm']**16.5)
+    stats['pythag'] = stats['pts_pm']**16.5 / (stats['pts_pm']**16.5 + stats['opp_pts_pm']**16.5)
     return stats
 
 
@@ -78,7 +78,7 @@ def add_rebounding_percentages(stats):
 def add_ast_to_tov(stats):
     """
     """
-    stats['ast/tov'] = stats['ast_pm'] / stats['to_pm']
+    stats['ast/to'] = stats['ast_pm'] / stats['to_pm']
     return stats
 
 
@@ -88,8 +88,8 @@ def add_turnovers_per_possession(stats):
     where poss = FGA + 0.5 * FTA - OREB + TO
     """
     stats['fgapm'] = stats['fga'] / stats['mp']
-    stats['possessionspm'] = ((stats['fgapm'] + 0.5) * stats['ftapm']) - stats['orpm'] + stats['tovpm']
-    stats['topp'] = stats['tovpm'] / stats['possessionspm']
+    stats['possessionspm'] = ((stats['fgapm'] + 0.5) * stats['ftapm']) - stats['orpm'] + stats['to_pm']
+    stats['to_pp'] = stats['to_pm'] / stats['possessionspm']
     return stats
 
 
@@ -209,8 +209,17 @@ def run(game_type):
         stats['opp_fg3_pct'] = stats['opp_fgm3']/stats['opp_fga3']
         stats['ast/to'] = stats['ast']/stats['to']
 
+        stats['pts'] = stats['score']
+        stats['opp_pts'] = stats['opp_score']
+        del stats['score']
+        del stats['opp_score']
+        del stats['team_name']
+
+        stats = add_offensive_efficiency(stats)
+        stats = add_defensive_efficiency(stats)
+
         stats_to_convert = ['fgm','fga','fgm3','fga3','ast','blk','ftm','fta',
-                            'stl','score','or','dr','pf','to']
+                            'stl','pts','or','dr','pf','to']
         for s in stats_to_convert:
             stats['{}_pm'.format(s)] = stats['{}'.format(s)]/stats['minutes_played']
             stats['opp_{}_pm'.format(s)] = stats['opp_{}'.format(s)]/stats['minutes_played']
@@ -218,11 +227,10 @@ def run(game_type):
             del stats['opp_{}'.format(s)]
         del stats['minutes_played']
 
+        stats = add_pythag_win_expectation(stats)
+
         #stats = add_turnovers_per_possession(stats)
         #stats = add_rebounding_percentages(stats)
-        #stats = add_pythag_win_expectation(stats)
-        #stats = add_offensive_efficiency(stats)
-        #stats = add_defensive_efficiency(stats)
         #stats = add_efficient_offensive_production(stats)
 
         stats.to_csv('data/final/{}.csv'.format(season), index=None)
