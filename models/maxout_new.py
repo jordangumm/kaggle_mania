@@ -21,10 +21,17 @@ import time
 import os, sys
 import click
 
+from lasagne.layers import FeaturePoolLayer
+from lasagne.nonlinearities import rectify, softmax, linear
+from lasagne.objectives import aggregate, categorical_crossentropy
+from lasagne.init import HeNormal
+
+
 class Maxout():
     """ Maxout Network """
 
-    def __init__(self, num_features, num_layers, num_nodes, dropout_p, learning_rate, momentum):
+    def __init__(self, num_features, num_layers, num_nodes, dropout_p, learning_rate, momentum, verbose=False):
+        self.verbose = verbose
         self.input_var = T.matrix('inputs')
         self.target_var = T.ivector('targets')
 
@@ -34,36 +41,22 @@ class Maxout():
         self.dropout_p = dropout_p
         self.network = self.get_network()
 
-        self.real_prediction = lasagne.layers.get_output(self.network,
+        self.prediction = lasagne.layers.get_output(self.network,
                                                     deterministic=True)
-        self.predict_function = theano.function([self.input_var], self.real_prediction)
+        self.predict_function = theano.function([self.input_var], self.prediction)
 
-        self.bayes_prediction = lasagne.layers.get_output(self.network,
-                                                    deterministic=False)
-        self.bayes_loss = lasagne.objectives.categorical_crossentropy(self.bayes_prediction,
-                                                                self.target_var)
-
-        def get_uncertainty_loss(num_samples):
-            """ Integrate bayesian loss into training step
-
-            Now the error gradient reflects uncertainty!
-            """
-            final_loss = 0.0
-            for _ in xrange(0,num_samples):
-                final_loss += self.bayes_loss.mean()
-            return final_loss / float(num_samples)
-
-        self.loss = get_uncertainty_loss(100)
+        self.loss = categorical_crossentropy(self.prediction, self.target_var)
+        self.loss = aggregate(self.loss, mode='mean')
 
         # L2 regularization (weight decay)
         weightsl2 = lasagne.regularization.regularize_network_params(self.network,
                                                     lasagne.regularization.l2)
-        self.loss += 1e-4*weightsl2
+        self.loss #+= 1e-4*weightsl2
 
         # ADAM training
         params = lasagne.layers.get_all_params(self.network, trainable=True)
-        #updates = lasagne.updates.adagrad(self.loss, params, learning_rate=learning_rate)
-        updates = lasagne.updates.adam(self.loss, params)
+        updates = lasagne.updates.adagrad(self.loss, params, learning_rate=learning_rate)
+        #updates = lasagne.updates.adam(self.loss, params)
         #updates = lasagne.updates.nesterov_momentum(self.loss, params,
         #                learning_rate=learning_rate, momentum=momentum)
 
@@ -76,18 +69,14 @@ class Maxout():
     def create_test_functions(self):
         """ Create Test Functions
         """
-        test_prediction = lasagne.layers.get_output(self.network,
-                                                deterministic=True)
-        test_loss = lasagne.objectives.categorical_crossentropy(
-                                        test_prediction, self.target_var).mean()
-        test_acc = T.mean(T.eq(T.argmax(test_prediction, axis=1),
-                                    self.target_var), dtype=theano.config.floatX)
-        self.test = theano.function([self.input_var, self.target_var],
-                                    [test_loss, test_acc])
+        test_prediction = lasagne.layers.get_output(self.network,deterministic=True)
+        test_loss = categorical_crossentropy(test_prediction, self.target_var).mean()
+        test_acc = T.mean(T.eq(T.argmax(test_prediction, axis=1), self.target_var), dtype=theano.config.floatX)
+        self.test = theano.function([self.input_var, self.target_var],[test_loss, test_acc])
 
 
     def add_maxout_layer(self, network, num_nodes=240):
-        network = lasagne.layers.DenseLayer(network, nonlinearity=None, num_units=num_nodes)
+        network = lasagne.layers.DenseLayer(network, nonlinearity=rectify, num_units=num_nodes, W=HeNormal(gain=.01))
         return lasagne.layers.FeaturePoolLayer(incoming=network, pool_size=2,
                                     axis=1, pool_function=theano.tensor.max)
 
@@ -98,17 +87,14 @@ class Maxout():
         network = lasagne.layers.DropoutLayer(network, p=0.2)
         for _ in xrange(0, self.num_layers):
             network = self.add_maxout_layer(network, self.num_nodes)
-        #network = lasagne.layers.FeaturePoolLayer(incoming=network, pool_size=4,
-        #                                axis=1, pool_function=theano.tensor.mean)
-        return lasagne.layers.DenseLayer(network, num_units=2,
-                            nonlinearity=lasagne.nonlinearities.softmax)
+        return lasagne.layers.DenseLayer(network, num_units=2,nonlinearity=softmax)
 
 
-    def train_model(self, train_X, train_y, test_X, test_y, features, batch_size=10, num_epochs=999,
+    def train_model(self, train_X, train_y, val_X, val_y, test_X, features, batch_size=10, num_epochs=99999,
                               early_stop_rounds=3, eval_type='log_loss'):
         """ Train Maxout Network
 
-        Returns tuple of scores to minimize
+        Returns list of predictions for test_X
         """
         self.network = self.get_network()
         season_evals = []
@@ -124,13 +110,10 @@ class Maxout():
                     excerpt = slice(start_idx, start_idx + batchsize)
                 yield inputs[excerpt], targets[excerpt]
 
-        best_val_loss = 100.0
-        best_val_acc = 0.0
-        best_bayes_loss = 100.0
-        best_bayes_acc = 0.0
+        best_val_loss = 1000.0
+        best_bayes_loss = 1000.0
         since_best = 0 # for early stopping
         all_bayes_loss_epochs = []
-        all_bayes_acc_epochs = []
         for epoch_num, epoch in enumerate(range(num_epochs)):
             # In each epoch, we do a full pass over the training data:
             train_err = 0
@@ -144,51 +127,47 @@ class Maxout():
 
             # And a full pass over the validation data:
             val_err = 0
-            val_acc = 0
             val_batches = 0
-            for batch in iterate_minibatches(test_X, test_y, batch_size, shuffle=False):
+            for batch in iterate_minibatches(val_X, val_y, batch_size, shuffle=False):
                 inputs, targets = batch
                 err, acc = self.test(inputs, targets)
                 val_err += err
-                val_acc += acc
                 val_batches += 1
 
             val_loss = val_err / val_batches
-            val_acc = val_acc / val_batches
 
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 since_best = 0
-            if val_acc > best_val_acc:
-                best_val_acc = val_acc
-                since_best = 0
 
             since_best += 1
 
-            # Then we print the results for this epoch:
-            #print("Epoch {} of {} took {:.3f}s".format(
-            #                    epoch + 1, num_epochs, time.time() - start_time))
-            #print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
-            #print("  bayes val loss:\t\t{:.6f}".format(val_loss))
-            #print("  bayes val accuracy:\t\t{:.2f} %".format(val_acc * 100))
+            if self.verbose:
+                # print the results for this epoch:
+                print("Epoch {} of {} took {:.3f}s".format(
+                                epoch + 1, num_epochs, time.time() - start_time))
+                print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
+                print("  validation loss:\t\t{:.6f}".format(val_loss))
 
             if since_best > early_stop_rounds:
-                break
+                    break
 
-        print 'best bayes loss: {}'.format(best_val_loss)
-        print 'best bayes acc: {}'.format(best_val_acc)
+        print 'best val loss: {}'.format(best_val_loss)
 
-        return best_val_loss
-
+        return self.predict_function(test_X)
 
 
-def train_cross_validation(df, features, batch_size=10, num_epochs=999,
+
+def train_bagging(df, features, verbose, batch_size=10, num_epochs=999,
                 num_layers=2, num_nodes=10,dropout=0.5,learning_rate=0.002,
                 momentum=0.5, early_stop_rounds=3, eval_type='log_loss'):
-    """ Train Maxout Networks in CV style
+    """ Train Maxout Networks in boosted aggregation style
 
     Returns tuple of scores to minimize
     """
+    games = pd.read_csv('../data/original/TourneyDetailedResults.csv')
+    teams = pd.read_csv('../data/original/Teams.csv')
+    seeds = pd.read_csv('../data/original/TourneySeeds.csv')
 
     models = []
     seasons = (2013,2014,2015,2016) # kaggle years minus 2016
@@ -196,60 +175,105 @@ def train_cross_validation(df, features, batch_size=10, num_epochs=999,
 
         test_season = season
         tmp_df = df[df['season'] == test_season]
-        for s in xrange(test_season-3, test_season): # only using previous 3 seasons
+        for s in xrange(2003, test_season): # only using previous 3 seasons
             tmp_df = tmp_df.append(df[df['season'] == s])
 
         test_df = tmp_df[tmp_df['season'] == test_season]
         train_df = tmp_df[tmp_df['season'] != test_season]
 
-        for f in features:
-            test_df[f] = test_df[f].rank(pct=True)
-            train_df[f] = train_df[f].rank(pct=True)
-
         print 'test season: {}'.format(test_df['season'].unique()[0])
         print 'train seasons: {}-{}'.format(min(train_df['season'].unique()), max(train_df['season'].unique()))
         print 'num features: {}'.format(len(features))
 
-        test_X = np.array(test_df[features], dtype=np.float32)
+        from sklearn.preprocessing import MinMaxScaler
+        scaler = MinMaxScaler()
+
+        test_X = np.array(scaler.fit_transform(test_df[features]), dtype=np.float32)
         test_y = np.array(test_df['won'], dtype=np.int32)
 
-        train_X = np.array(train_df[features], dtype=np.float32)
-        train_y = np.array(train_df['won'], dtype=np.int32)
+        pred_outputs = []
+        [pred_outputs.append([]) for _ in xrange(len(test_y))]
 
-        for i in xrange(0,5):
+        # Run boosted aggregation!
+        for i in xrange(0,10):
+            sampling_df = train_df.sample(n=len(train_df), replace=True, random_state=i*94)
+
+            train_X = np.array(scaler.fit_transform(sampling_df[features]), dtype=np.float32)
+            train_y = np.array(sampling_df['won'], dtype=np.int32)
+
+            val_X = np.array(scaler.fit_transform(train_df[features]), dtype=np.float32)
+            val_y = np.array(train_df['won'], dtype=np.int32)
+
+
             maxout_trainer = Maxout(num_features=len(features),
                                     num_layers=num_layers,
                                     num_nodes=100,
                                     dropout_p=dropout,
                                     learning_rate=learning_rate,
-                                    momentum=momentum)
-            score = maxout_trainer.train_model(train_X=train_X,
+                                    momentum=momentum,
+                                    verbose=verbose)
+            predictions = maxout_trainer.train_model(train_X=train_X,
                                                 train_y=train_y,
+                                                val_X=val_X,
+                                                val_y=val_y,
                                                 test_X=test_X,
-                                                test_y=test_y,
                                                 features=features,
                                                 early_stop_rounds=early_stop_rounds,
                                                 eval_type=eval_type)
+            [pred_outputs[i].append(pred[1]) for i, pred in enumerate(predictions)]
 
-            print 'test {}: {}'.format(eval_type, score)
+        import math
+        tourney_games = games[games['Season'] == test_season]
+        tourney_seeds = seeds[seeds['Season'] == test_season]
+        bagg_output = open('../output/{}_maxout_tourney_game_predictions.csv'.format(season), 'w+')
+        #bagg_output.write('wteam,lteam,wpred_var,wpred_mean,w_truth,lpred_var,lpred_mean,l_truth\n')
+        bagg_output.write('team_one,team_two,pred,truth\n')
+        final_predictions = []
+        for i, pred in enumerate(pred_outputs):
+            if i%2==0:
+                wteam = tourney_games.iloc[[int(math.floor(i/2))]]['Wteam'].unique()[0]
+                lteam = tourney_games.iloc[[int(math.floor(i/2))]]['Lteam'].unique()[0]
+                wteam_name = teams[teams['Team_Id'] == wteam]['Team_Name'].unique()[0]
+                lteam_name = teams[teams['Team_Id'] == lteam]['Team_Name'].unique()[0]
+                wteam_seed = tourney_seeds[tourney_seeds['Team'] == wteam]['Seed'].unique()[0]
+                lteam_seed = tourney_seeds[tourney_seeds['Team'] == lteam]['Seed'].unique()[0]
+                bagg_output.write('{}.{},{}.{},'.format(wteam_seed, wteam_name,
+                                                            lteam_seed, lteam_name))
+                bagg_output.write('{},{},{},'.format(np.var(pred),np.mean(pred),test_y[i]))
+                final_predictions.append(np.mean(pred))
+            else:
+                bagg_output.write('{},{},{}\n'.format(np.var(pred),np.mean(pred),test_y[i]))
+                final_predictions.append(np.mean(pred))
+        bagg_output.close()
+
+        from sklearn.metrics import log_loss
+
+        print '{} final log loss: {}'.format(season, log_loss(test_y, final_predictions))
+
+        if verbose:
+            sys.exit('only one iteration for verbose debugging')
 
 
 
 @click.command()
 @click.argument('num_nodes', type=click.INT)
 @click.argument('num_layers', type=click.INT)
-@click.option('-dropout', type=click.FLOAT, default=0.5)
-@click.option('-learning_rate', type=click.FLOAT, default=0.001)
+@click.option('-dropout', type=click.FLOAT, default=0.9)
+@click.option('-learning_rate', type=click.FLOAT, default=0.1)
 @click.option('-momentum', type=click.FLOAT, default=0.5)
 @click.option('-eval_type', type=click.STRING, default='log_loss')
-@click.option('-batch_size', type=click.INT, default=20)
-@click.option('-early_stop', type=click.INT, default=20)
-@click.option('-norm_tech', default='scale')
-def run(num_nodes, num_layers, dropout, learning_rate, momentum, eval_type, batch_size, early_stop, norm_tech):
+@click.option('-batch_size', type=click.INT, default=60)
+@click.option('-early_stop', type=click.INT, default=10)
+@click.option('-verbose', type=click.BOOL, default=False)
+@click.option('-max_epochs', type=click.INT, default=9999)
+def run(num_nodes, num_layers, dropout, learning_rate, momentum, eval_type, batch_size, early_stop, verbose, max_epochs):
     for i, s in enumerate((2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016)):
         if i == 0:
             df = pd.read_csv('../data/games/{}_tourney_diff_games.csv'.format(s))
+            # maybe integrate previously predicted attributes?
+            #extra = pd.read_csv('../output/{}_maxout_tourney_game_predictions.csv'.format(s))
             df['season'] = s
+
         else:
             tmp = pd.read_csv('../data/games/{}_tourney_diff_games.csv'.format(s))
             tmp['season'] = s
@@ -257,12 +281,14 @@ def run(num_nodes, num_layers, dropout, learning_rate, momentum, eval_type, batc
 
     features = df.keys().tolist()
     features.remove('season')
+    #features.remove('team_name')
     features.remove('won')
 
-    train_cross_validation(df=df, features=features, batch_size=batch_size, num_epochs=999,
+    train_bagging(df=df, features=features, batch_size=batch_size, num_epochs=max_epochs,
                         num_layers=num_layers, num_nodes=num_nodes, dropout=dropout,
                         learning_rate=learning_rate, momentum=momentum,
-                        early_stop_rounds=early_stop, eval_type=eval_type)
+                        early_stop_rounds=early_stop, eval_type=eval_type,
+                        verbose=verbose)
 
 
 if __name__ == "__main__":

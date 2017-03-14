@@ -31,6 +31,12 @@ def add_offensive_efficiency(stats):
       * (stats['or'] / (stats['or'] + stats['opp_dr'])) * (stats['fga'] - stats['fgm']) + stats['to'])
       + (stats['opp_fga'] + 0.4 * stats['opp_fta'] - 1.07 * (stats['opp_or'] / (stats['opp_or'] + stats['dr']))
       * (stats['opp_fga'] - stats['opp_fgm']) + stats['opp_to']))
+
+
+    stats['opp_oe'] = 100 * stats['opp_pts'] / 0.5 * ((stats['opp_fga'] + 0.4 * stats['opp_fta'] - 1.07 \
+      * (stats['opp_or'] / (stats['opp_or'] + stats['dr'])) * (stats['opp_fga'] - stats['opp_fgm']) + stats['opp_to'])
+      + (stats['fga'] + 0.4 * stats['fta'] - 1.07 * (stats['or'] / (stats['or'] + stats['opp_dr']))
+      * (stats['fga'] - stats['fgm']) + stats['to']))
     return stats
 
 
@@ -38,9 +44,11 @@ def add_efficient_offensive_production(stats):
     """
     raw_eop = (.76 * ast + pts) * OE
     """
-    #stats['oe2'] = (stats['fg'] + stats['ast']) / (stats['fga'] - stats['orb'] + stats['ast'] + stats['tov'])
+    stats['oe2'] = (stats['fg'] + stats['ast']) / (stats['fga'] - stats['or'] + stats['ast'] + stats['to'])
     stats['raw_eop'] = (.76 * stats['ast'] + stats['pts']) * stats['oe2']
     stats['eop'] = stats['raw_eop'] * (np.sum(stats['pts']) / (stats['oe'] * (stats['pts'] + .76 * stats['ast'])))
+
+
     return stats
 
 
@@ -51,6 +59,9 @@ def add_defensive_efficiency(stats):
     """
     opp_pos = stats['opp_fga'] + 0.475 * stats['opp_fta'] - stats['opp_or'] + stats['opp_to']
     stats['de'] = (stats['opp_pts'] / opp_pos) * 100
+
+    pos = stats['fga'] + 0.475 * stats['fta'] - stats['or'] + stats['to']
+    stats['opp_de'] = (stats['pts'] / opp_pos) * 100
     return stats
 
 
@@ -61,6 +72,7 @@ def add_pythag_win_expectation(stats):
     where x is 16.5 as determined in A Starting Point for Analyzing Basketball
     """
     stats['pythag'] = stats['pts_pm']**16.5 / (stats['pts_pm']**16.5 + stats['opp_pts_pm']**16.5)
+    stats['opp_pythag'] = stats['opp_pts_pm']**16.5 / (stats['opp_pts_pm']**16.5 + stats['pts_pm']**16.5)
     return stats
 
 
@@ -70,8 +82,11 @@ def add_rebounding_percentages(stats):
     oreb% = oreb / (oreb+dreb)
     dreb% = dreb / (oreb+dreb)
     """
-    stats['or%'] = stats['orpm'] / (stats['orpm'] + stats['drpm'])
-    stats['dr%'] = stats['drpm'] / (stats['orpm'] + stats['drpm'])
+    stats['or%'] = stats['or_pm'] / (stats['or_pm'] + stats['dr_pm'])
+    stats['dr%'] = stats['dr_pm'] / (stats['or_pm'] + stats['dr_pm'])
+
+    stats['opp_or%'] = stats['opp_or_pm'] / (stats['opp_or_pm'] + stats['opp_dr_pm'])
+    stats['opp_dr%'] = stats['opp_dr_pm'] / (stats['opp_or_pm'] + stats['opp_dr_pm'])
     return stats
 
 
@@ -104,7 +119,7 @@ def convert_stats_to_ranks(data):
             data[key] = data[key].rank(pct=True)
     return data
 
-def create_games(stats, games, season, game_type):
+def create_classification_games(stats, games, season, game_type):
     """
     """
     output = open('data/games/{}_{}_games.csv'.format(season, game_type), 'w+')
@@ -122,6 +137,7 @@ def create_games(stats, games, season, game_type):
     header = [f for f in stats.keys() if f not in ['team_name', 'season', 'kaggle_id']]
     diff_output.write(','.join([s for s in header]))
     diff_output.write('\n')
+
 
     for game in games[games['Season'] == season].iterrows():
         game = game[1]
@@ -153,6 +169,64 @@ def create_games(stats, games, season, game_type):
 
         diff_stats = lstats-wstats
         diff_output.write('0,')
+        diff_output.write(','.join(str(x) for x in diff_stats))
+        diff_output.write('\n')
+
+    output.close()
+
+
+def create_regression_games(stats, games, season, game_type, stat_to_learn='pts'):
+    """
+    """
+    output = open('data/games/{}_{}_games_{}.csv'.format(season, game_type, stat_to_learn), 'w+')
+    features = [f for f in stats.keys() if f not in ['team_name', 'season', 'kaggle_id']]
+    header = [f for f in stats.keys() if f not in ['team_name', 'season', 'kaggle_id']]
+    [header.append('_{}'.format(f)) for f in stats.keys() if f not in ['team_name', 'season', 'kaggle_id']]
+    output.write('won,')
+    output.write(','.join(header))
+    output.write('\n')
+
+    stats = convert_stats_to_ranks(stats)
+
+    diff_output = open('data/games/{}_{}_diff_games_{}.csv'.format(
+                                season, game_type, stat_to_learn), 'w+')
+    diff_output.write('won,')
+    header = [f for f in stats.keys() if f not in ['team_name', 'season', 'kaggle_id']]
+    diff_output.write(','.join([s for s in header]))
+    diff_output.write('\n')
+
+    for game in games[games['Season'] == season].iterrows():
+        game = game[1]
+        wteam = stats[(stats['kaggle_id'] == game['Wteam']) & (stats['season'] == season)]
+        lteam = stats[(stats['kaggle_id'] == game['Lteam']) & (stats['season'] == season)]
+
+        wkaggle = wteam['kaggle_id'].unique()[0]
+        lkaggle = lteam['kaggle_id'].unique()[0]
+
+        wstats = wteam[features].values[0]
+        lstats = lteam[features].values[0]
+
+        #print('{} over {}'.format(game['W{}'.format(stat_to_learn)], game['L{}'.format(stat_to_learn)]))
+
+        output.write('{},'.format(game['W{}'.format(stat_to_learn)]))
+        output.write(','.join(str(x) for x in wstats))
+        output.write(',')
+        output.write(','.join(str(x) for x in lstats))
+        output.write('\n')
+
+        output.write('{},'.format(game['L{}'.format(stat_to_learn)]))
+        output.write(','.join(str(x) for x in lstats))
+        output.write(',')
+        output.write(','.join(str(x) for x in wstats))
+        output.write('\n')
+
+        diff_stats = wstats-lstats
+        diff_output.write('{},'.format(game['W{}'.format(stat_to_learn)]))
+        diff_output.write(','.join(str(x) for x in diff_stats))
+        diff_output.write('\n')
+
+        diff_stats = lstats-wstats
+        diff_output.write('{},'.format(game['L{}'.format(stat_to_learn)]))
         diff_output.write(','.join(str(x) for x in diff_stats))
         diff_output.write('\n')
 
@@ -213,7 +287,7 @@ def run(game_type):
         stats['opp_pts'] = stats['opp_score']
         del stats['score']
         del stats['opp_score']
-        del stats['team_name']
+        #del stats['team_name']
 
         stats = add_offensive_efficiency(stats)
         stats = add_defensive_efficiency(stats)
@@ -228,14 +302,17 @@ def run(game_type):
         del stats['minutes_played']
 
         stats = add_pythag_win_expectation(stats)
-
         #stats = add_turnovers_per_possession(stats)
-        #stats = add_rebounding_percentages(stats)
-        #stats = add_efficient_offensive_production(stats)
+        stats = add_rebounding_percentages(stats)
+        #stats = add_efficient_offensive_production(stats) -- could this be biased??
 
         stats.to_csv('data/final/{}.csv'.format(season), index=None)
 
-        create_games(stats, games, season, game_type)
+        """ Preprocess before creating game entries?
+        """
+
+        create_classification_games(stats, games, season, game_type)
+        create_regression_games(stats, games, season, game_type, 'score')
 
 
 if __name__ == '__main__':

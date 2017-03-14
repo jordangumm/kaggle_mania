@@ -88,8 +88,11 @@ def get_rpi(season_games, team):
 
 print games.keys()
 
+seeds = pd.read_csv('data/original/TourneySeeds.csv')
+
 output = None
 for i, season in enumerate(games['Season'].unique()):
+    season_seeds = seeds[seeds['Season'] == season]
     print season
     season_games = games[games['Season'] == season]
     teams = set(season_games['Wteam'].unique().tolist() + season_games['Lteam'].unique().tolist())
@@ -105,8 +108,14 @@ for i, season in enumerate(games['Season'].unique()):
         team_stats['kaggle_id'] = team
         team_stats['team_name'] = team_names[team_names['Team_Id'] == team]['Team_Name'].unique()[0]
         team_stats['season'] = season
+        seed = season_seeds[season_seeds['Team'] == team]['Seed'].unique()
 
-        print '{}: {}'.format(team_stats['team_name'], team_stats['rpi'])
+        if seed:
+            team_stats['seed'] = int(seed[0].rstrip('a').rstrip('b')[-2:])
+        else:
+            team_stats['seed'] = 0
+
+        print '{}.{}: {}'.format(team_stats['seed'], team_stats['team_name'], team_stats['rpi'])
 
         if type(output) == type(None):
             output = pd.DataFrame(team_stats, index=[i+k])
