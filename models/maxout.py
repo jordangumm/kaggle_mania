@@ -75,13 +75,13 @@ class Maxout():
 
 
     def add_maxout_layer(self, network, num_nodes=240):
-        network = lasagne.layers.DenseLayer(network, nonlinearity=rectify, num_units=num_nodes)
+        network = lasagne.layers.DenseLayer(network, nonlinearity=sigmoid, num_units=num_nodes)
         return lasagne.layers.FeaturePoolLayer(incoming=network, pool_size=2,
                                     axis=1, pool_function=theano.tensor.max)
 
 
     def get_network(self):
-        network = lasagne.layers.InputLayer(shape=(None, self.num_features),
+        network = lasagne.layers.InputLayer(shape=(rectify, self.num_features),
                                             input_var=self.input_var)
         network = lasagne.layers.DropoutLayer(network, p=0.2)
         for _ in xrange(0, self.num_layers):

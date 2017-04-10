@@ -144,8 +144,11 @@ def create_classification_games(stats, games, season, game_type):
         wteam = stats[(stats['kaggle_id'] == game['Wteam']) & (stats['season'] == season)]
         lteam = stats[(stats['kaggle_id'] == game['Lteam']) & (stats['season'] == season)]
 
-        wkaggle = wteam['kaggle_id'].unique()[0]
-        lkaggle = lteam['kaggle_id'].unique()[0]
+        try:
+            wkaggle = wteam['kaggle_id'].unique()[0]
+            lkaggle = lteam['kaggle_id'].unique()[0]
+        except:
+            continue
 
         wstats = wteam[features].values[0]
         lstats = lteam[features].values[0]
@@ -271,10 +274,15 @@ def run(game_type):
     else:
         sys.exit('{} is an unknown game type'.format(game_type))
 
-    for season in games['Season'].unique():
+    for season in xrange(2003,2018):
         print season
         stats = pd.read_csv('data/intermediate/team_regular_season_stats.csv')
+        metrics = pd.read_csv('data/intermediate/player_stats.csv')
+
         stats = stats[stats['season'] == season]
+        metrics = metrics[metrics['season'] == season]
+
+        stats = stats.merge(metrics)
         #stats = filter_out_nontourney_teams(stats, games[games['Season'] == season])
 
         stats['fg_pct'] = stats['fgm']/stats['fga']
@@ -312,7 +320,7 @@ def run(game_type):
         """
 
         create_classification_games(stats, games, season, game_type)
-        create_regression_games(stats, games, season, game_type, 'score')
+        #create_regression_games(stats, games, season, game_type, 'score')
 
 
 if __name__ == '__main__':

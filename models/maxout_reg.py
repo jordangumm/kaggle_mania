@@ -4,7 +4,6 @@ TODO: Track Uncertainty
 - potentially bias training based on most uncertain examples until an equilibrium is found
 """
 
-import lime
 import sys
 import h5py
 import pandas as pd
@@ -27,8 +26,6 @@ from lasagne.nonlinearities import rectify, softmax, linear, sigmoid
 from lasagne.objectives import aggregate, categorical_crossentropy
 from lasagne.init import HeNormal
 
-from sklearn.pipeline import make_pipeline
-
 
 class Maxout():
     """ Maxout Network """
@@ -46,7 +43,7 @@ class Maxout():
 
         self.prediction = lasagne.layers.get_output(self.network,
                                                     deterministic=True)
-        self.predict_function = theano.function([self.input_var], self.prediction, allow_input_downcast=True)
+        self.predict_function = theano.function([self.input_var], self.prediction)
 
         self.loss = categorical_crossentropy(self.prediction, self.target_var)
         self.loss = aggregate(self.loss, mode='mean')
@@ -58,8 +55,8 @@ class Maxout():
 
         # ADAM training
         params = lasagne.layers.get_all_params(self.network, trainable=True)
-        #updates = lasagne.updates.adagrad(self.loss, params, learning_rate=learning_rate)
-        updates = lasagne.updates.adam(self.loss, params)
+        updates = lasagne.updates.adagrad(self.loss, params, learning_rate=learning_rate)
+        #updates = lasagne.updates.adam(self.loss, params)
         #updates = lasagne.updates.nesterov_momentum(self.loss, params,
         #                learning_rate=learning_rate, momentum=momentum)
 
@@ -81,7 +78,7 @@ class Maxout():
     def add_maxout_layer(self, network, num_nodes=240):
         network = lasagne.layers.DropoutLayer(network, p=self.dropout)
         network = lasagne.layers.DenseLayer(network, nonlinearity=rectify, num_units=num_nodes)
-        return lasagne.layers.FeaturePoolLayer(incoming=network, pool_size=num_nodes,
+        return lasagne.layers.FeaturePoolLayer(incoming=network, pool_size=2,
                                     axis=1, pool_function=theano.tensor.max)
 
 
@@ -90,16 +87,12 @@ class Maxout():
                                             input_var=self.input_var)
         network = lasagne.layers.DropoutLayer(network, p=self.dropout)
         for _ in xrange(0, self.num_layers):
-            network = self.add_maxout_layer(network, self.num_nodes)
+            network = batch_norm(self.add_maxout_layer(network, self.num_nodes))
         return lasagne.layers.DenseLayer(network, num_units=2,nonlinearity=softmax)
 
 
-    def predict_proba(self, test_X):
-        return self.predict_function(test_X)
-
-
-    def fit(self, train_X, train_y, val_X, val_y, test_X, features, batch_size=10,
-                    num_epochs=99999, early_stop_rounds=3, eval_type='log_loss'):
+    def train_model(self, train_X, train_y, val_X, val_y, test_X, features, batch_size=10, num_epochs=99999,
+                              early_stop_rounds=3, eval_type='log_loss'):
         """ Train Maxout Network
 
         Returns list of predictions for test_X
@@ -122,56 +115,53 @@ class Maxout():
         best_bayes_loss = 1000.0
         since_best = 0 # for early stopping
         all_bayes_loss_epochs = []
+        for epoch_num, epoch in enumerate(range(num_epochs)):
+            # In each epoch, we do a full pass over the training data:
+            train_err = 0
+            train_batches = 0
+            start_time = time.time()
+            for batch in iterate_minibatches(train_X, train_y, batch_size, shuffle=True):
+                inputs, targets = batch
+                err = self.train(inputs, targets)
+                train_err += err
+                train_batches += 1
 
-        try:
-            for epoch_num, epoch in enumerate(range(num_epochs)):
-                # In each epoch, we do a full pass over the training data:
-                train_err = 0
-                train_batches = 0
-                start_time = time.time()
-                for batch in iterate_minibatches(train_X, train_y, batch_size, shuffle=True):
-                    inputs, targets = batch
-                    err = self.train(inputs, targets)
-                    train_err += err
-                    train_batches += 1
+            # And a full pass over the validation data:
+            val_err = 0
+            val_batches = 0
+            for batch in iterate_minibatches(val_X, val_y, batch_size, shuffle=False):
+                inputs, targets = batch
+                err, acc = self.test(inputs, targets)
+                val_err += err
+                val_batches += 1
 
-                # And a full pass over the validation data:
-                val_err = 0
-                val_batches = 0
-                for batch in iterate_minibatches(val_X, val_y, batch_size, shuffle=False):
-                    inputs, targets = batch
-                    err, acc = self.test(inputs, targets)
-                    val_err += err
-                    val_batches += 1
+            val_loss = val_err / val_batches
 
-                val_loss = val_err / val_batches
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                since_best = 0
 
-                if val_loss < best_val_loss:
-                    best_val_loss = val_loss
-                    since_best = 0
+            since_best += 1
 
-                since_best += 1
+            if self.verbose:
+                # print the results for this epoch:
+                print("Epoch {} of {} took {:.3f}s".format(
+                                epoch + 1, num_epochs, time.time() - start_time))
+                print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
+                print("  validation loss:\t\t{:.6f}".format(val_loss))
 
-                if self.verbose:
-                    # print the results for this epoch:
-                    print("Epoch {} of {} took {:.3f}s".format(
-                                    epoch + 1, num_epochs, time.time() - start_time))
-                    print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
-                    print("  validation loss:\t\t{:.6f}".format(val_loss))
-
-                if since_best > early_stop_rounds:
-                        break
-        except:
-            pass
+            if since_best > early_stop_rounds:
+                    break
 
         print 'best val loss: {}'.format(best_val_loss)
 
         return self.predict_function(test_X)
 
 
-def train_bagging(df, features, verbose, batch_size, num_epochs,
-                    num_layers, num_nodes,dropout,learning_rate,
-                    momentum, early_stop_rounds, num_baggs, eval_type='log_loss'):
+
+def train_bagging(df, features, verbose, batch_size=10, num_epochs=999,
+                num_layers=2, num_nodes=10,dropout=0.5,learning_rate=0.002,
+                momentum=0.5, early_stop_rounds=3, eval_type='log_loss', num_baggs=10):
     """ Train Maxout Networks in boosted aggregation style
 
     Returns tuple of scores to minimize
@@ -180,23 +170,19 @@ def train_bagging(df, features, verbose, batch_size, num_epochs,
     teams = pd.read_csv('../data/original/Teams.csv')
     seeds = pd.read_csv('../data/original/TourneySeeds.csv')
 
-    def normalize(data):
-        for key in data.keys():
-            if not key in features: continue
-            data[key] = (data[key] - data[key].min()) / (data[key].max() - data[key].min())
-        return data
-
     models = []
     seasons = (2013,2014,2015,2016) # kaggle years minus 2016
-    for season in seasons:
+    for i, season in enumerate(seasons):
 
         test_season = season
         tmp_df = df[df['season'] == test_season]
         for s in xrange(2003, test_season): # only using previous 3 seasons
             tmp_df = tmp_df.append(df[df['season'] == s])
 
-        test_df = normalize(tmp_df[tmp_df['season'] == test_season])
-        train_df = normalize(tmp_df[tmp_df['season'] != test_season])
+        test_df = tmp_df[(tmp_df['season'] == test_season) & (tmp_df['game_type'] == 'tourney')]
+
+        train_df = tmp_df[tmp_df['season'] != test_season]
+        train_df = train_df.append(tmp_df[(tmp_df['season'] == test_season) & (tmp_df['game_type'] == 'regular_season')])
 
         print 'test season: {}'.format(test_df['season'].unique()[0])
         print 'train seasons: {}-{}'.format(min(train_df['season'].unique()), max(train_df['season'].unique()))
@@ -209,8 +195,8 @@ def train_bagging(df, features, verbose, batch_size, num_epochs,
         [pred_outputs.append([]) for _ in xrange(len(test_y))]
 
         # Run boosted aggregation!
-        for bag_iteration in xrange(0,num_baggs):
-            sampling_df = train_df.sample(n=len(train_df), replace=True, random_state=bag_iteration*94)
+        for i in xrange(0,num_baggs):
+            sampling_df = train_df.sample(n=len(train_df), replace=True, random_state=i*94)
 
             train_X = np.array(sampling_df[features], dtype=np.float32)
             train_y = np.array(sampling_df['won'], dtype=np.int32)
@@ -225,44 +211,36 @@ def train_bagging(df, features, verbose, batch_size, num_epochs,
                                     learning_rate=learning_rate,
                                     momentum=momentum,
                                     verbose=verbose)
-            iter_preds = maxout_trainer.fit(train_X=train_X,
-                                train_y=train_y,
-                                val_X=val_X,
-                                val_y=val_y,
-                                test_X=test_X,
-                                features=features,
-                                early_stop_rounds=early_stop_rounds,
-                                eval_type=eval_type)
+            predictions = maxout_trainer.train_model(train_X=train_X,
+                                                train_y=train_y,
+                                                val_X=val_X,
+                                                val_y=val_y,
+                                                test_X=test_X,
+                                                features=features,
+                                                early_stop_rounds=early_stop_rounds,
+                                                eval_type=eval_type)
+            [pred_outputs[i].append(pred[1]) for i, pred in enumerate(predictions)]
 
-            from lime.lime_tabular import LimeTabularExplainer
-            explainer = LimeTabularExplainer(train_X, feature_names=features, class_names=['lost', 'won'], discretize_continuous=True)
-            for game_num, test_example in enumerate(test_X):
-                exp = explainer.explain_instance(test_example, maxout_trainer.predict_proba, num_features=len(features))
-                exp.save_to_file('../output/{}/{}_explanation.html'.format(season, game_num))
-
-            [pred_outputs[pred_num].append(pred[1]) for pred_num, pred in enumerate(iter_preds)]
-
-        #print pred_outputs
         import math
         tourney_games = games[games['Season'] == test_season]
         tourney_seeds = seeds[seeds['Season'] == test_season]
         bagg_output = open('../output/{}_maxout_tourney_game_predictions.csv'.format(season), 'w+')
         bagg_output.write('team_one,team_two,team_one_pred_mean,team_one_truth,team_two_pred_mean,team_two_truth\n')
         predictions = []
-        for pred_num, pred in enumerate(pred_outputs):
-            if pred_num%2==0:
-                wteam = tourney_games.iloc[[int(math.floor(pred_num/2))]]['Wteam'].unique()[0]
-                lteam = tourney_games.iloc[[int(math.floor(pred_num/2))]]['Lteam'].unique()[0]
+        for i, pred in enumerate(pred_outputs):
+            if i%2==0:
+                wteam = tourney_games.iloc[[int(math.floor(i/2))]]['Wteam'].unique()[0]
+                lteam = tourney_games.iloc[[int(math.floor(i/2))]]['Lteam'].unique()[0]
                 wteam_name = teams[teams['Team_Id'] == wteam]['Team_Name'].unique()[0]
                 lteam_name = teams[teams['Team_Id'] == lteam]['Team_Name'].unique()[0]
                 wteam_seed = tourney_seeds[tourney_seeds['Team'] == wteam]['Seed'].unique()[0]
                 lteam_seed = tourney_seeds[tourney_seeds['Team'] == lteam]['Seed'].unique()[0]
-                bagg_output.write('{}.{}.{},{}.{}.{},'.format(wteam_seed, wteam_name, wteam,
-                                                            lteam_seed, lteam_name, lteam))
-                bagg_output.write('{},{},'.format(np.mean(pred),test_y[pred_num]))
+                bagg_output.write('{}.{},{}.{},'.format(wteam_seed, wteam_name,
+                                                            lteam_seed, lteam_name))
+                bagg_output.write('{},{},'.format(np.mean(pred),test_y[i]))
                 predictions.append(np.mean(pred))
             else:
-                bagg_output.write('{},{}\n'.format(np.mean(pred),test_y[pred_num]))
+                bagg_output.write('{},{}\n'.format(np.mean(pred),test_y[i]))
                 predictions.append(np.mean(pred))
         bagg_output.close()
 
@@ -292,11 +270,11 @@ def train_bagging(df, features, verbose, batch_size, num_epochs,
 @click.command()
 @click.argument('num_nodes', type=click.INT)
 @click.argument('num_layers', type=click.INT)
-@click.option('-dropout', type=click.FLOAT, default=0.9)
-@click.option('-learning_rate', type=click.FLOAT, default=0.001)
+@click.option('-dropout', type=click.FLOAT, default=0.2)
+@click.option('-learning_rate', type=click.FLOAT, default=0.006)
 @click.option('-momentum', type=click.FLOAT, default=0.5)
 @click.option('-eval_type', type=click.STRING, default='log_loss')
-@click.option('-batch_size', type=click.INT, default=200)
+@click.option('-batch_size', type=click.INT, default=10)
 @click.option('-early_stop', type=click.INT, default=2)
 @click.option('-verbose', type=click.BOOL, default=False)
 @click.option('-max_epochs', type=click.INT, default=9999)
@@ -304,12 +282,24 @@ def train_bagging(df, features, verbose, batch_size, num_epochs,
 def run(num_nodes, num_layers, dropout, learning_rate, momentum, eval_type, batch_size, early_stop, verbose, max_epochs, num_baggs):
     for i, s in enumerate(xrange(2003,2017)):
         if i == 0:
-            df = pd.read_csv('../data/games/{}_tourney_games.csv'.format(s))
+            df = pd.read_csv('../data/games/{}_tourney_diff_games.csv'.format(s))
+            df['game_type'] = 'tourney'
+
+            reg_df = pd.read_csv('../data/games/{}_regular_season_diff_games.csv'.format(s))
+            reg_df['game_type'] = 'regular_season'
+            # maybe integrate previously predicted attributes?
+            #extra = pd.read_csv('../output/{}_maxout_tourney_game_predictions.csv'.format(s))
+            df = df.append(reg_df)
             df['season'] = s
         else:
-            tmp = pd.read_csv('../data/games/{}_tourney_games.csv'.format(s))
-            tmp['season'] = s
-            df = df.append(tmp)
+            df_tmp = pd.read_csv('../data/games/{}_tourney_diff_games.csv'.format(s))
+            df_tmp['game_type'] = 'tourney'
+
+            reg_df = pd.read_csv('../data/games/{}_regular_season_diff_games.csv'.format(s))
+            reg_df['game_type'] = 'regular_season'
+
+            df_tmp['season'] = s
+            df = df.append(df_tmp)
 
     df = df.fillna(0.0)
 
@@ -317,16 +307,13 @@ def run(num_nodes, num_layers, dropout, learning_rate, momentum, eval_type, batc
     features.remove('season')
     #features.remove('team_name')
     features.remove('won')
-
-    """ Features removed due to LIME inspection """
-    features.remove('seed')
-    features.remove('_seed')
+    features.remove('game_type')
 
     train_bagging(df=df, features=features, batch_size=batch_size, num_epochs=max_epochs,
-                    num_layers=num_layers, num_nodes=num_nodes, dropout=dropout,
-                    learning_rate=learning_rate, momentum=momentum,
-                    early_stop_rounds=early_stop, eval_type=eval_type,
-                    verbose=verbose, num_baggs=num_baggs)
+                        num_layers=num_layers, num_nodes=num_nodes, dropout=dropout,
+                        learning_rate=learning_rate, momentum=momentum,
+                        early_stop_rounds=early_stop, eval_type=eval_type,
+                        verbose=verbose, num_baggs=num_baggs)
 
 
 if __name__ == "__main__":
