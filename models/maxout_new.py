@@ -58,8 +58,8 @@ class Maxout():
 
         # ADAM training
         params = lasagne.layers.get_all_params(self.network, trainable=True)
-        #updates = lasagne.updates.adagrad(self.loss, params, learning_rate=learning_rate)
-        updates = lasagne.updates.adam(self.loss, params)
+        updates = lasagne.updates.adagrad(self.loss, params, learning_rate=learning_rate)
+        #updates = lasagne.updates.adam(self.loss, params)
         #updates = lasagne.updates.nesterov_momentum(self.loss, params,
         #                learning_rate=learning_rate, momentum=momentum)
 
@@ -80,8 +80,8 @@ class Maxout():
 
     def add_maxout_layer(self, network, num_nodes=240):
         network = lasagne.layers.DropoutLayer(network, p=self.dropout)
-        network = lasagne.layers.DenseLayer(network, nonlinearity=rectify, num_units=num_nodes)
-        return lasagne.layers.FeaturePoolLayer(incoming=network, pool_size=num_nodes,
+        network = lasagne.layers.DenseLayer(network, nonlinearity=None, num_units=num_nodes)
+        return lasagne.layers.FeaturePoolLayer(incoming=network, pool_size=4,
                                     axis=1, pool_function=theano.tensor.max)
 
 
@@ -232,13 +232,14 @@ def train_bagging(df, features, verbose, batch_size, num_epochs,
                                 test_X=test_X,
                                 features=features,
                                 early_stop_rounds=early_stop_rounds,
-                                eval_type=eval_type)
+                                eval_type=eval_type,
+                                batch_size=batch_size)
 
-            from lime.lime_tabular import LimeTabularExplainer
-            explainer = LimeTabularExplainer(train_X, feature_names=features, class_names=['lost', 'won'], discretize_continuous=True)
-            for game_num, test_example in enumerate(test_X):
-                exp = explainer.explain_instance(test_example, maxout_trainer.predict_proba, num_features=len(features))
-                exp.save_to_file('../output/{}/{}_explanation.html'.format(season, game_num))
+            #from lime.lime_tabular import LimeTabularExplainer
+            #explainer = LimeTabularExplainer(train_X, feature_names=features, class_names=['lost', 'won'], discretize_continuous=True)
+            #for game_num, test_example in enumerate(test_X):
+            #    exp = explainer.explain_instance(test_example, maxout_trainer.predict_proba, num_features=len(features))
+            #    exp.save_to_file('../output/{}/{}_explanation.html'.format(season, game_num))
 
             [pred_outputs[pred_num].append(pred[1]) for pred_num, pred in enumerate(iter_preds)]
 
@@ -292,22 +293,22 @@ def train_bagging(df, features, verbose, batch_size, num_epochs,
 @click.command()
 @click.argument('num_nodes', type=click.INT)
 @click.argument('num_layers', type=click.INT)
-@click.option('-dropout', type=click.FLOAT, default=0.9)
-@click.option('-learning_rate', type=click.FLOAT, default=0.001)
+@click.option('-dropout', type=click.FLOAT, default=0.50)
+@click.option('-learning_rate', type=click.FLOAT, default=0.1)
 @click.option('-momentum', type=click.FLOAT, default=0.5)
 @click.option('-eval_type', type=click.STRING, default='log_loss')
-@click.option('-batch_size', type=click.INT, default=200)
+@click.option('-batch_size', type=click.INT, default=1)
 @click.option('-early_stop', type=click.INT, default=2)
 @click.option('-verbose', type=click.BOOL, default=False)
 @click.option('-max_epochs', type=click.INT, default=9999)
-@click.option('-num_baggs', type=click.INT, default=3)
+@click.option('-num_baggs', type=click.INT, default=1)
 def run(num_nodes, num_layers, dropout, learning_rate, momentum, eval_type, batch_size, early_stop, verbose, max_epochs, num_baggs):
     for i, s in enumerate(xrange(2003,2017)):
         if i == 0:
-            df = pd.read_csv('../data/games/{}_tourney_games.csv'.format(s))
+            df = pd.read_csv('../data/games/{}_tourney_diff_games.csv'.format(s))
             df['season'] = s
         else:
-            tmp = pd.read_csv('../data/games/{}_tourney_games.csv'.format(s))
+            tmp = pd.read_csv('../data/games/{}_tourney_diff_games.csv'.format(s))
             tmp['season'] = s
             df = df.append(tmp)
 
@@ -320,7 +321,7 @@ def run(num_nodes, num_layers, dropout, learning_rate, momentum, eval_type, batc
 
     """ Features removed due to LIME inspection """
     features.remove('seed')
-    features.remove('_seed')
+    #features.remove('_seed')
 
     train_bagging(df=df, features=features, batch_size=batch_size, num_epochs=max_epochs,
                     num_layers=num_layers, num_nodes=num_nodes, dropout=dropout,
