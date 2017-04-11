@@ -21,9 +21,10 @@ import lasagne
 import time
 import os, sys
 import click
+import copy
 
 from lasagne.layers import FeaturePoolLayer, batch_norm
-from lasagne.nonlinearities import rectify, softmax, linear, sigmoid
+from lasagne.nonlinearities import rectify, softmax, linear, sigmoid, elu
 from lasagne.objectives import aggregate, categorical_crossentropy
 from lasagne.init import HeNormal
 
@@ -43,10 +44,18 @@ class Maxout():
         self.num_nodes = num_nodes
         self.dropout = dropout
         self.network = self.get_network()
+        self.final_network = copy.copy(self.network)
+
+        self.final_prediction = lasagne.layers.get_output(self.final_network,
+                                                          deterministic=True)
+        self.final_predict = theano.function([self.input_var], self.final_prediction,
+                                                           allow_input_downcast=True)
+
 
         self.prediction = lasagne.layers.get_output(self.network,
-                                                    deterministic=True)
-        self.predict_function = theano.function([self.input_var], self.prediction, allow_input_downcast=True)
+                                               deterministic=True)
+        self.predict_function = theano.function([self.input_var], self.prediction,
+                                                        allow_input_downcast=True)
 
         self.loss = categorical_crossentropy(self.prediction, self.target_var)
         self.loss = aggregate(self.loss, mode='mean')
@@ -80,7 +89,7 @@ class Maxout():
 
     def add_maxout_layer(self, network, num_nodes=240):
         network = lasagne.layers.DropoutLayer(network, p=self.dropout)
-        network = lasagne.layers.DenseLayer(network, nonlinearity=None, num_units=num_nodes)
+        network = lasagne.layers.DenseLayer(network, nonlinearity=elu, num_units=num_nodes)
         return lasagne.layers.FeaturePoolLayer(incoming=network, pool_size=4,
                                     axis=1, pool_function=theano.tensor.max)
 
@@ -95,7 +104,7 @@ class Maxout():
 
 
     def predict_proba(self, test_X):
-        return self.predict_function(test_X)
+        return self.final_predict(test_X)
 
 
     def fit(self, train_X, train_y, val_X, val_y, test_X, features, batch_size=10,
@@ -147,6 +156,7 @@ class Maxout():
                 val_loss = val_err / val_batches
 
                 if val_loss < best_val_loss:
+                    self.final_network = copy.copy(self.network)
                     best_val_loss = val_loss
                     since_best = 0
 
@@ -294,21 +304,21 @@ def train_bagging(df, features, verbose, batch_size, num_epochs,
 @click.argument('num_nodes', type=click.INT)
 @click.argument('num_layers', type=click.INT)
 @click.option('-dropout', type=click.FLOAT, default=0.50)
-@click.option('-learning_rate', type=click.FLOAT, default=0.1)
+@click.option('-learning_rate', type=click.FLOAT, default=0.4)
 @click.option('-momentum', type=click.FLOAT, default=0.5)
 @click.option('-eval_type', type=click.STRING, default='log_loss')
 @click.option('-batch_size', type=click.INT, default=1)
 @click.option('-early_stop', type=click.INT, default=2)
 @click.option('-verbose', type=click.BOOL, default=False)
 @click.option('-max_epochs', type=click.INT, default=9999)
-@click.option('-num_baggs', type=click.INT, default=1)
+@click.option('-num_baggs', type=click.INT, default=25)
 def run(num_nodes, num_layers, dropout, learning_rate, momentum, eval_type, batch_size, early_stop, verbose, max_epochs, num_baggs):
     for i, s in enumerate(xrange(2003,2017)):
         if i == 0:
-            df = pd.read_csv('../data/games/{}_tourney_diff_games.csv'.format(s))
+            df = pd.read_csv('../data/games/{}_tourney_games.csv'.format(s))
             df['season'] = s
         else:
-            tmp = pd.read_csv('../data/games/{}_tourney_diff_games.csv'.format(s))
+            tmp = pd.read_csv('../data/games/{}_tourney_games.csv'.format(s))
             tmp['season'] = s
             df = df.append(tmp)
 
@@ -321,7 +331,7 @@ def run(num_nodes, num_layers, dropout, learning_rate, momentum, eval_type, batc
 
     """ Features removed due to LIME inspection """
     features.remove('seed')
-    #features.remove('_seed')
+    features.remove('_seed')
 
     train_bagging(df=df, features=features, batch_size=batch_size, num_epochs=max_epochs,
                     num_layers=num_layers, num_nodes=num_nodes, dropout=dropout,

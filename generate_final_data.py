@@ -274,6 +274,9 @@ def run(game_type):
     else:
         sys.exit('{} is an unknown game type'.format(game_type))
 
+    if not os.path.exists('data/games'):
+        os.mkdir('data/games')
+
     for season in xrange(2003,2018):
         print season
         stats = pd.read_csv('data/intermediate/team_regular_season_stats.csv')
@@ -313,6 +316,9 @@ def run(game_type):
         #stats = add_turnovers_per_possession(stats)
         stats = add_rebounding_percentages(stats)
         #stats = add_efficient_offensive_production(stats) -- could this be biased??
+
+        if not os.path.exists('data/final'):
+            os.mkdir('data/final')
 
         stats.to_csv('data/final/{}.csv'.format(season), index=None)
 
