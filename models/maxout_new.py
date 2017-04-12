@@ -27,6 +27,8 @@ from lasagne.layers import FeaturePoolLayer, batch_norm
 from lasagne.nonlinearities import rectify, softmax, linear, sigmoid, elu
 from lasagne.objectives import aggregate, categorical_crossentropy
 from lasagne.init import HeNormal
+from lasagne.init import Glorot, Normal
+from lasagne.updates import norm_constraint
 
 from sklearn.pipeline import make_pipeline
 
@@ -63,7 +65,9 @@ class Maxout():
         # L2 regularization (weight decay)
         weightsl2 = lasagne.regularization.regularize_network_params(self.network,
                                                     lasagne.regularization.l2)
-        self.loss #+= 1e-4*weightsl2
+        weightsl1 = lasagne.regularization.regularize_network_params(self.network,
+                                                    lasagne.regularization.l1)
+        self.loss += 1e-1*weightsl2 #+ 1e-5*weightsl1
 
         # ADAM training
         params = lasagne.layers.get_all_params(self.network, trainable=True)
@@ -89,7 +93,7 @@ class Maxout():
 
     def add_maxout_layer(self, network, num_nodes=240):
         network = lasagne.layers.DropoutLayer(network, p=self.dropout)
-        network = lasagne.layers.DenseLayer(network, nonlinearity=elu, num_units=num_nodes)
+        network = lasagne.layers.DenseLayer(network, nonlinearity=None, num_units=num_nodes, W=Glorot(Normal))
         return lasagne.layers.FeaturePoolLayer(incoming=network, pool_size=4,
                                     axis=1, pool_function=theano.tensor.max)
 
@@ -193,7 +197,8 @@ def train_bagging(df, features, verbose, batch_size, num_epochs,
     def normalize(data):
         for key in data.keys():
             if not key in features: continue
-            data[key] = (data[key] - data[key].min()) / (data[key].max() - data[key].min())
+            data[key] -= data[key].mean()
+            data[key] /= data[key].std()
         return data
 
     models = []
@@ -207,6 +212,8 @@ def train_bagging(df, features, verbose, batch_size, num_epochs,
 
         test_df = normalize(tmp_df[tmp_df['season'] == test_season])
         train_df = normalize(tmp_df[tmp_df['season'] != test_season])
+
+        batch_size = int(len(test_df)*.1) #################################### SET BATCH SIZE!!!
 
         print 'test season: {}'.format(test_df['season'].unique()[0])
         print 'train seasons: {}-{}'.format(min(train_df['season'].unique()), max(train_df['season'].unique()))
@@ -308,10 +315,10 @@ def train_bagging(df, features, verbose, batch_size, num_epochs,
 @click.option('-momentum', type=click.FLOAT, default=0.5)
 @click.option('-eval_type', type=click.STRING, default='log_loss')
 @click.option('-batch_size', type=click.INT, default=1)
-@click.option('-early_stop', type=click.INT, default=2)
+@click.option('-early_stop', type=click.INT, default=200)
 @click.option('-verbose', type=click.BOOL, default=False)
 @click.option('-max_epochs', type=click.INT, default=9999)
-@click.option('-num_baggs', type=click.INT, default=25)
+@click.option('-num_baggs', type=click.INT, default=1)
 def run(num_nodes, num_layers, dropout, learning_rate, momentum, eval_type, batch_size, early_stop, verbose, max_epochs, num_baggs):
     for i, s in enumerate(xrange(2003,2017)):
         if i == 0:
