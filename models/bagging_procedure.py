@@ -6,6 +6,7 @@ import sys
 
 import pandas as pd
 import numpy as np
+import click
 
 from maxout import Maxout
 from maxout_residual import MaxoutResidual
@@ -145,3 +146,50 @@ def train_with_bagging(df, features, verbose, batch_size, num_epochs,
 
         if verbose:
             sys.exit('only one iteration for verbose debugging')
+
+
+@click.command()
+@click.argument('num_nodes', type=click.INT)
+@click.argument('num_layers', type=click.INT)
+@click.option('-dropout', type=click.FLOAT, default=0.5)
+@click.option('-learning_rate', type=click.FLOAT, default=0.001)
+@click.option('-momentum', type=click.FLOAT, default=0.5)
+@click.option('-eval_type', type=click.STRING, default='log_loss')
+@click.option('-batch_size', type=click.INT, default=1)
+@click.option('-early_stop', type=click.INT, default=7)
+@click.option('-verbose', type=click.BOOL, default=False)
+@click.option('-max_epochs', type=click.INT, default=9999)
+@click.option('-num_baggs', type=click.INT, default=1)
+@click.option('-maxout_type', type=click.STRING, default='maxout')
+def run(num_nodes, num_layers, dropout, learning_rate, momentum,
+        eval_type, batch_size, early_stop, verbose, max_epochs,
+                                        num_baggs, maxout_type):
+    for i, s in enumerate(xrange(2003,2017)):
+        if i == 0:
+            df = pd.read_csv('../data/games/{}_tourney_diff_games.csv'.format(s))
+            df['season'] = s
+        else:
+            tmp = pd.read_csv('../data/games/{}_tourney_diff_games.csv'.format(s))
+            tmp['season'] = s
+            df = df.append(tmp)
+
+    df = df.fillna(0.0)
+
+    features = df.keys().tolist()
+    features.remove('season')
+    #features.remove('team_name')
+    features.remove('won')
+
+    """ Features removed due to LIME inspection """
+    features.remove('seed')
+    #features.remove('_seed')
+
+    train_with_bagging(df=df, features=features, batch_size=batch_size, num_epochs=max_epochs,
+                num_layers=num_layers, num_nodes=num_nodes, dropout=dropout,
+                learning_rate=learning_rate, momentum=momentum,
+                early_stop_rounds=early_stop, eval_type=eval_type,
+                verbose=verbose, num_baggs=num_baggs, maxout_type=maxout_type)
+
+
+if __name__ == "__main__":
+    run()
