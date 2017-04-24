@@ -153,27 +153,33 @@ def create_classification_games(stats, games, season, game_type):
         wstats = wteam[features].values[0]
         lstats = lteam[features].values[0]
 
-        output.write('1,')
-        output.write(','.join(str(x) for x in wstats))
-        output.write(',')
-        output.write(','.join(str(x) for x in lstats))
-        output.write('\n')
+        if wkaggle > lkaggle:
 
-        output.write('0,')
-        output.write(','.join(str(x) for x in lstats))
-        output.write(',')
-        output.write(','.join(str(x) for x in wstats))
-        output.write('\n')
+            output.write('1,')
+            output.write(','.join(str(x) for x in wstats))
+            output.write(',')
+            output.write(','.join(str(x) for x in lstats))
+            output.write('\n')
+        else:
 
-        diff_stats = wstats-lstats
-        diff_output.write('1,')
-        diff_output.write(','.join(str(x) for x in diff_stats))
-        diff_output.write('\n')
+            output.write('0,')
+            output.write(','.join(str(x) for x in lstats))
+            output.write(',')
+            output.write(','.join(str(x) for x in wstats))
+            output.write('\n')
 
-        diff_stats = lstats-wstats
-        diff_output.write('0,')
-        diff_output.write(','.join(str(x) for x in diff_stats))
-        diff_output.write('\n')
+        if wkaggle > lkaggle:
+
+            diff_stats = wstats-lstats
+            diff_output.write('1,')
+            diff_output.write(','.join(str(x) for x in diff_stats))
+            diff_output.write('\n')
+        else:
+
+            diff_stats = lstats-wstats
+            diff_output.write('0,')
+            diff_output.write(','.join(str(x) for x in diff_stats))
+            diff_output.write('\n')
 
     output.close()
 

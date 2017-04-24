@@ -8,8 +8,8 @@ import lime
 import sys
 import h5py
 import pandas as pd
+import cPickle as pickle
 from sklearn.svm import SVC
-import math
 from sklearn.metrics import *
 from sklearn.cross_validation import KFold
 
@@ -19,6 +19,7 @@ import theano.tensor as T
 import numpy as np
 import lasagne
 import time
+import math
 import os, sys
 import click
 import copy
@@ -30,13 +31,11 @@ from lasagne.init import HeNormal
 from lasagne.init import Glorot, Normal
 from lasagne.updates import norm_constraint
 
-from sklearn.pipeline import make_pipeline
-
 
 class Maxout():
     """ Maxout Network """
 
-    def __init__(self, num_features, num_layers, num_nodes, dropout, learning_rate, momentum, verbose=False):
+    def __init__(self, num_features, num_layers, num_nodes, dropout, learning_rate, weight_decay, verbose=False):
         self.verbose = verbose
         self.input_var = T.matrix('inputs')
         self.target_var = T.ivector('targets')
@@ -45,14 +44,7 @@ class Maxout():
         self.num_layers = num_layers
         self.num_nodes = num_nodes
         self.dropout = dropout
-        self.network = self.get_network()
-        self.final_network = copy.copy(self.network)
-
-        self.final_prediction = lasagne.layers.get_output(self.final_network,
-                                                          deterministic=True)
-        self.final_predict = theano.function([self.input_var], self.final_prediction,
-                                                           allow_input_downcast=True)
-
+        self.network = self.build_network()
 
         self.prediction = lasagne.layers.get_output(self.network,
                                                deterministic=True)
@@ -62,12 +54,12 @@ class Maxout():
         self.loss = categorical_crossentropy(self.prediction, self.target_var)
         self.loss = aggregate(self.loss, mode='mean')
 
-        # L2 regularization (weight decay)
+        # L2 regularization with weight decay
         weightsl2 = lasagne.regularization.regularize_network_params(self.network,
                                                     lasagne.regularization.l2)
         weightsl1 = lasagne.regularization.regularize_network_params(self.network,
                                                     lasagne.regularization.l1)
-        self.loss += 1e-3*weightsl2 #+ 1e-5*weightsl1
+        self.loss += weight_decay*weightsl2 #+ 1e-5*weightsl1
 
         # ADAM training
         params = lasagne.layers.get_all_params(self.network, trainable=True)
@@ -108,7 +100,7 @@ class Maxout():
                                     axis=1, pool_function=theano.tensor.max)
 
 
-    def get_network(self):
+    def build_network(self):
         network = lasagne.layers.InputLayer(shape=(None, self.num_features),
                                             input_var=self.input_var)
         network = lasagne.layers.DropoutLayer(network, p=self.dropout)
@@ -117,8 +109,19 @@ class Maxout():
         return lasagne.layers.DenseLayer(network, num_units=2,nonlinearity=softmax)
 
 
-    def predict_proba(self, test_X):
-        return self.final_predict(test_X)
+    def save_network(self, model_fp):
+        net_info = {'network': self.network, 'params': lasagne.layers.get_all_param_values(self.network)}
+        pickle.dump(net_info, open(model_fp, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
+
+
+    def load_network(self, model_fp):
+        net = pickle.load(open(model_fp,'rb'))
+        all_params = net['params']
+        lasagne.layers.set_all_param_values(self.network, all_params)
+
+
+    def predict_proba(self, X):
+        return self.predict_function(X)
 
 
     def get_bayes_validation_metrics(self, test_X, test_y):
@@ -168,13 +171,12 @@ class Maxout():
             yield inputs[excerpt], targets[excerpt]
 
 
-    def fit(self, train_X, train_y, val_X, val_y, test_X, features, batch_size=10,
-                    num_epochs=99999, early_stop_rounds=3, eval_type='log_loss'):
+    def fit(self, train_X, train_y, val_X, val_y, features, batch_size=10,
+                                    num_epochs=99999, early_stop_rounds=3):
         """ Train Maxout Network
 
         Returns list of predictions for test_X
         """
-        #self.network = self.get_network()
         season_evals = []
 
         best_val_loss = 1000.0
@@ -196,9 +198,11 @@ class Maxout():
             bayes_val_acc, bayes_val_loss = self.get_bayes_validation_metrics(val_X, val_y)
             val_acc, val_loss = self.get_validation_metrics(val_X, val_y)
 
-            if val_loss < best_val_loss:
-                self.final_network = copy.copy(self.network)
-                best_val_loss = val_loss
+            if bayes_val_loss < best_bayes_loss:
+                print 'saving model'
+                self.save_network('output/models/model.pkl')
+                best_bayes_loss = bayes_val_loss
+                best_val_loss = val_loss # track raw validation loss with bayes
                 since_best = 0
 
             if self.verbose:
@@ -216,6 +220,6 @@ class Maxout():
             if since_best > early_stop_rounds:
                 break
 
+        self.network = self.load_network('output/models/model.pkl')
         print 'best val loss: {}'.format(best_val_loss)
-
-        return self.predict_function(test_X)
+        return self.predict_proba(val_X)

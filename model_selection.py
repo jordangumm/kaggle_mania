@@ -6,23 +6,23 @@ import sys
 import click
 import random
 import pandas as pd
+import numpy as np
 from numpy import mean
 from deap import base, creator
 from deap import tools
 from deap import algorithms
 
-from models.maxout_new import Maxout
-
-from feature_selection import get_l1_selection
-from feature_selection import get_xgboost_selection
+import bagging_procedure
 
 
 class ModelSelector():
-    def __init__(self, df, features, eval_type, ngen):
-        self.df = df
+    def __init__(self, train_df, test_df, features, eval_type, ngen, model_type):
+        self.train_df = train_df
+        self.test_df = test_df
         self.features = features
         self.eval_type = eval_type
         self.ngen = ngen
+        self.model_type = model_type
 
     def evaluate(self, indi):
         """ Train model with individual parameters
@@ -31,13 +31,23 @@ class ModelSelector():
         TODO: add model_type to test best model (Maxout, Maxout Residual, etc.)
         """
         print indi
-        model = Maxout(num_features=len(self.features),
-                       num_layers=indi[0],
-                       num_nodes=indi[1],
-                       dropout_p=indi[2])
-        scores = model.train_model(df=self.df,
-                                  features=self.features,
-                                  eval_type=self.eval_type)
+        num_layers = indi[0]
+        num_nodes = indi[1]
+        dropout_p = indi[2]
+        weight_decay = indi[3]
+        eta = indi[4]
+
+        print 'num_layers:\t{}'.format(num_layers)
+        print 'num_nodes:\t{}'.format(num_nodes)
+        print 'dropout_p:\t{}'.format(dropout_p)
+        print 'weight_decay:\t{}'.format(weight_decay)
+        print 'learning rate:\t{}'.format(eta)
+
+        scores = bagging_procedure.train_with_bagging(train_df=self.train_df,
+            features=self.features, verbose=False, batch_size=1, num_epochs=99999,
+            num_layers=num_layers,num_nodes=num_nodes,dropout_p=dropout_p,learning_rate=eta,
+            early_stop_rounds=10, num_baggs=1, weight_decay=weight_decay)
+
         print tuple(scores)
         return tuple(scores)
 
@@ -77,9 +87,15 @@ class ModelSelector():
         return best
 
     def get_toolbox(self):
-        num_layer_min, num_layer_max = 1, 3
+        """
+
+        eta: learning rate
+        """
+        num_layer_min, num_layer_max = 1, 2
         num_nodes_min, num_nodes_max = 2, 100
-        dropout_min, dropout_max = 0.0, 0.5
+        dropout_min, dropout_max = 0.1, 0.5
+        decay_min, decay_max = 1e-4, 1e-1
+        eta_min, eta_max = 1e-4, 1e-1
 
         creator.create("FitnessMin", base.Fitness, weights=(-1.0,-1.0,-1.0))
         creator.create("Individual", list, fitness=creator.FitnessMin)
@@ -88,8 +104,11 @@ class ModelSelector():
         toolbox.register("num_layers", random.randint, num_layer_min, num_layer_max)
         toolbox.register("num_nodes", self.get_random_numnodes_for_poolsize, num_nodes_min, num_nodes_max)
         toolbox.register("dropout_p", random.uniform, dropout_min, dropout_max)
+        toolbox.register("weight_decay", random.uniform, decay_min, decay_max)
+        toolbox.register("eta", random.uniform, eta_min, eta_max)
         toolbox.register("individual", tools.initCycle, creator.Individual,
-                    (toolbox.num_layers, toolbox.num_nodes, toolbox.dropout_p), n=1)
+                    (toolbox.num_layers, toolbox.num_nodes, toolbox.dropout_p,
+                                    toolbox.weight_decay, toolbox.eta), n=1)
 
         toolbox.register("mate", tools.cxUniform)
         toolbox.register("mutate", self.random_mutation)
@@ -130,22 +149,46 @@ class ModelSelector():
 
 @click.command()
 @click.argument('ngen', type=click.INT)
-def run(ngen):
-    for i, s in enumerate((2010,2011,2012,2013,2014,2015,2016)):
+@click.argument('season_to_predict', type=click.INT)
+@click.option('-model_type', default='maxout')
+def run(ngen, season_to_predict, model_type):
+    if season_to_predict not in xrange(2008,2017):
+        sys.exit("season {} not in 2008-2016 prediction range".format(season_to_predict))
+
+    for i, s in enumerate(xrange(2003,2017)):
         if i == 0:
-            df = pd.read_csv('data/final/{}_tourney_games.csv'.format(s))
+            df = pd.read_csv('data/games/{}_tourney_diff_games.csv'.format(s))
             df['season'] = s
         else:
-            tmp = pd.read_csv('data/final/{}_tourney_games.csv'.format(s))
+            tmp = pd.read_csv('data/games/{}_tourney_diff_games.csv'.format(s))
             tmp['season'] = s
             df = df.append(tmp)
 
-    features = df.keys().tolist()
-    features.remove('won')
-    features.remove('season')
+    df = df.fillna(0.0)
 
-    selector = ModelSelector(df=df, features=features,
-                        eval_type='bayes_loss', ngen=ngen)
+    features = df.keys().tolist()
+    features.remove('season')
+    #features.remove('team_name')
+    features.remove('won')
+
+    """ Features removed due to LIME inspection """
+    features.remove('seed')
+    #features.remove('_seed')
+
+    def normalize(data):
+        for key in data.keys():
+            if not key in features: continue
+            mean = data[key].mean()
+            std = data[key].std()
+            data.loc[:, key] = data[key].apply(lambda x: x - mean / std)
+        return data
+
+    train_df = normalize(df[df['season'] < season_to_predict])
+    test_df = normalize(df[df['season'] == season_to_predict])
+
+    selector = ModelSelector(train_df=train_df, test_df=test_df, features=features,
+                                                    eval_type='bayes_loss', ngen=ngen,
+                                                    model_type=model_type)
     selector.select_best_model()
 
 
