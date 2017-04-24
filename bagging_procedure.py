@@ -95,12 +95,11 @@ def train_with_bagging(train_df, features, verbose, batch_size, num_epochs,
 
 
         final_preds = [np.mean(p) for p in pred_outputs]
-        print 'final holdout log loss: {}'.format(test_season, log_loss(test_y, final_preds))
+        print 'final holdout log loss: {}'.format(log_loss(test_y, final_preds))
         holdout_losses.append(log_loss(test_y, final_preds))
 
     if verbose:
         sys.exit('only one iteration for verbose debugging')
-    print holdout_losses
     return holdout_losses
 
 
@@ -110,7 +109,7 @@ def train_with_bagging(train_df, features, verbose, batch_size, num_epochs,
 @click.option('-dropout', type=click.FLOAT, default=0.263817749011)
 @click.option('-learning_rate', type=click.FLOAT, default=0.0331640958066)
 @click.option('-eval_type', type=click.STRING, default='log_loss')
-@click.option('-batch_size', type=click.INT, default=1)
+@click.option('-batch_size', type=click.INT, default=3)
 @click.option('-early_stop', type=click.INT, default=7)
 @click.option('-verbose', type=click.BOOL, default=False)
 @click.option('-max_epochs', type=click.INT, default=9999)

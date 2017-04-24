@@ -199,7 +199,6 @@ class Maxout():
             val_acc, val_loss = self.get_validation_metrics(val_X, val_y)
 
             if bayes_val_loss < best_bayes_loss:
-                print 'saving model'
                 self.save_network('output/models/model.pkl')
                 best_bayes_loss = bayes_val_loss
                 best_val_loss = val_loss # track raw validation loss with bayes

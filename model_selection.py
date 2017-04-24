@@ -30,7 +30,6 @@ class ModelSelector():
         TODO: add eval_type to test best evaluation (log_loss, bayes_acc, etc.)
         TODO: add model_type to test best model (Maxout, Maxout Residual, etc.)
         """
-        print indi
         num_layers = indi[0]
         num_nodes = indi[1]
         dropout_p = indi[2]
@@ -46,7 +45,7 @@ class ModelSelector():
         scores = bagging_procedure.train_with_bagging(train_df=self.train_df,
             features=self.features, verbose=False, batch_size=1, num_epochs=99999,
             num_layers=num_layers,num_nodes=num_nodes,dropout_p=dropout_p,learning_rate=eta,
-            early_stop_rounds=10, num_baggs=1, weight_decay=weight_decay)
+            early_stop_rounds=10, num_baggs=3, weight_decay=weight_decay)
 
         print tuple(scores)
         return tuple(scores)
@@ -127,6 +126,7 @@ class ModelSelector():
             ind.fitness.values = fit
 
         for g in range(self.ngen):
+            print 'GENERATION {}'.format(g)
             offspring = toolbox.select(pop, 2)
             offspring = map(toolbox.clone, offspring)
 
