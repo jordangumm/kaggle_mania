@@ -66,6 +66,8 @@ class ModelSelector():
         """ TODO """
         print 'original: {}'.format(mutant)
         mutant = toolbox.population(n=10)[0]
+        print 'mutant: {}'.format(mutant)
+        sys.exit()
         return mutant
 
     def select_best(self, individuals, k):
@@ -96,7 +98,7 @@ class ModelSelector():
         decay_min, decay_max = 1e-4, 1e-1
         eta_min, eta_max = 1e-4, 1e-1
 
-        creator.create("FitnessMin", base.Fitness, weights=(-1.0,-1.0,-1.0))
+        creator.create("FitnessMin", base.Fitness, weights=(-1.0,-1.0)) # loss, bayes loss
         creator.create("Individual", list, fitness=creator.FitnessMin)
 
         toolbox = base.Toolbox()
@@ -120,7 +122,7 @@ class ModelSelector():
     def select_best_model(self):
         """ """
         toolbox = self.get_toolbox()
-        pop = toolbox.population(n=10)
+        pop = toolbox.population(n=2)
         fitnesses = toolbox.map(toolbox.evaluate, pop)
         for ind, fit in zip(pop, fitnesses):
             ind.fitness.values = fit

@@ -91,6 +91,7 @@ class Maxout():
         test_loss = categorical_crossentropy(test_prediction, self.target_var).mean()
         test_acc = T.mean(T.eq(T.argmax(test_prediction, axis=1), self.target_var), dtype=theano.config.floatX)
         self.bayes_test = theano.function([self.input_var, self.target_var],[test_loss, test_acc])
+        self.bayes_predict = theano.function([self.input_var], test_prediction, allow_input_downcast=True)
 
 
     def add_maxout_layer(self, network, num_nodes=240):
@@ -121,7 +122,19 @@ class Maxout():
 
 
     def predict_proba(self, X):
+        """ Returns log loss of X """
         return self.predict_function(X)
+
+
+    def predict_bayes_proba(self, X):
+        """ Returns predictions over X """
+        preds = []
+        for x in X:
+            samples = []
+            for _ in xrange(100):
+                samples.append(self.bayes_predict([x])[0][1])
+            preds.append(np.mean(samples))
+        return preds
 
 
     def get_bayes_validation_metrics(self, test_X, test_y):
@@ -220,5 +233,6 @@ class Maxout():
                 break
 
         self.network = self.load_network('output/models/model.pkl')
-        print 'best val loss: {}'.format(best_val_loss)
+        if self.verbose:
+            print 'best val loss: {}'.format(best_val_loss)
         return self.predict_proba(val_X)

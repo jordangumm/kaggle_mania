@@ -42,6 +42,7 @@ def train_with_bagging(train_df, features, verbose, batch_size, num_epochs,
     kf.get_n_splits(train_df)
 
     holdout_losses = []
+    bayes_holdout_losses = []
     for train_index, test_index in kf.split(train_df):
 
         # bagging uses original training set as validation set
@@ -56,6 +57,9 @@ def train_with_bagging(train_df, features, verbose, batch_size, num_epochs,
 
         pred_outputs = []
         [pred_outputs.append([]) for _ in xrange(len(test_df))]
+
+        bayes_pred_outputs = []
+        [bayes_pred_outputs.append([]) for _ in xrange(len(test_df))]
 
         # Run boosted aggregation!
         for bag_iteration in xrange(0,num_baggs):
@@ -82,8 +86,11 @@ def train_with_bagging(train_df, features, verbose, batch_size, num_epochs,
                                 early_stop_rounds=early_stop_rounds,
                                 batch_size=batch_size)
 
-            print 'holdout loss:\t{}'.format(log_loss(test_y, maxout_trainer.predict_proba(test_X)))
             iter_preds = maxout_trainer.predict_proba(test_X)
+            bayes_iter_preds = maxout_trainer.predict_bayes_proba(test_X)
+
+            print 'holdout loss: {}\tholdout bayes loss: {}'.format(log_loss(test_y, iter_preds),
+                                                                  log_loss(test_y, bayes_iter_preds))
 
             #from lime.lime_tabular import LimeTabularExplainer
             #explainer = LimeTabularExplainer(train_X, feature_names=features, class_names=['lost', 'won'], discretize_continuous=True)
@@ -92,15 +99,20 @@ def train_with_bagging(train_df, features, verbose, batch_size, num_epochs,
             #    exp.save_to_file('../output/{}/{}_explanation.html'.format(season, game_num))
 
             [pred_outputs[pred_num].append(pred[1]) for pred_num, pred in enumerate(iter_preds)]
+            [bayes_pred_outputs[pred_num].append(pred) for pred_num, pred in enumerate(bayes_iter_preds)]
 
 
         final_preds = [np.mean(p) for p in pred_outputs]
-        print 'final holdout log loss: {}'.format(log_loss(test_y, final_preds))
+        final_bayes_preds = [np.mean(p) for p in bayes_pred_outputs]
+        print 'final holdout loss:\t{}'.format(log_loss(test_y, final_preds))
+        print 'final bayes holdout loss:\t{}'.format(log_loss(test_y, final_bayes_preds))
+        print
         holdout_losses.append(log_loss(test_y, final_preds))
+        bayes_holdout_losses.append(log_loss(test_y, final_bayes_preds))
 
     if verbose:
         sys.exit('only one iteration for verbose debugging')
-    return holdout_losses
+    return np.mean(holdout_losses), np.mean(bayes_holdout_losses)
 
 
 @click.command()
