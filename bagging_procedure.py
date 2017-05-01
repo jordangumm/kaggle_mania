@@ -129,7 +129,7 @@ def train_with_bagging(train_df, features, verbose, batch_size, num_epochs,
 @click.option('-max_epochs', type=click.INT, default=9999)
 @click.option('-num_baggs', type=click.INT, default=1)
 @click.option('-maxout_type', type=click.STRING, default='maxout')
-@click.option('-test_season', type=click.INT, default=2008)
+@click.option('-test_season', type=click.INT, default=2014)
 def run(num_nodes, num_layers, dropout, learning_rate,
         eval_type, batch_size, early_stop, verbose, max_epochs,
                             num_baggs, maxout_type, test_season):
@@ -150,21 +150,29 @@ def run(num_nodes, num_layers, dropout, learning_rate,
     features.remove('won')
 
     """ Features removed due to LIME inspection """
-    features.remove('seed')
+    #features.remove('seed')
     #features.remove('_seed')
 
-    def normalize(df):
-        df[features] = (df[features]-df[features].mean())/df[features].std()
-        #for key in df.keys():
-        #    if not key in features: continue
-        #    df[key] = df[key]/df[key].loc[df.abs().idxmax()].astype(np.float64)
-        #    df[key]=(df-df.mean())/df.std()
+    #def normalize(df):
+        #df[features] = (df[features]-df[features].mean())/df[features].std()
+    #    for key in df.keys():
+    #        if not key in features: continue
+            #df[key] = df[key]/df[key].loc[df.abs().idxmax()].astype(np.float64)
+        #    df[key]=(df[key]-df[key].mean())/df.std()
 
             #mean = data[key].mean()
             #std = data[key].std()
             #data.loc[:, key] = data.loc[:, key].apply(lambda x: x - mean / std)
             #data.loc[:, key] = data.loc[:, key].apply(lambda x: (x - data[key].min()) / (data[key].max() - data[key].min()))
-        return df
+    #    return df
+
+    def normalize(data):
+        for key in data.keys():
+            if not key in features: continue
+            mean = data[key].mean()
+            std = data[key].std()
+            data.loc[:, key] = data[key].apply(lambda x: x - mean / std)
+        return data
 
     train_df = normalize(df[df['season'] < test_season])
     test_df = normalize(df[df['season'] == test_season])
@@ -172,7 +180,7 @@ def run(num_nodes, num_layers, dropout, learning_rate,
     #train_df = df[df['season'] < test_season]
     #test_df = df[df['season'] == test_season]
 
-    train_with_bagging(train_df=train_df, test_df=test_df, features=features,
+    train_with_bagging(train_df=train_df, features=features,
                 batch_size=batch_size, num_epochs=max_epochs,
                 num_layers=num_layers, num_nodes=num_nodes, dropout_p=dropout,
                 learning_rate=learning_rate, weight_decay=0.0586784183643,

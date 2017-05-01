@@ -45,7 +45,7 @@ class ModelSelector():
         scores = bagging_procedure.train_with_bagging(train_df=self.train_df,
             features=self.features, verbose=False, batch_size=1, num_epochs=99999,
             num_layers=num_layers,num_nodes=num_nodes,dropout_p=dropout_p,learning_rate=eta,
-            early_stop_rounds=10, num_baggs=10, weight_decay=weight_decay)
+            early_stop_rounds=10, num_baggs=5, weight_decay=weight_decay)
 
         print tuple(scores)
         return tuple(scores)
