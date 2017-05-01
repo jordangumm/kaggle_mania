@@ -25,7 +25,7 @@ import click
 import copy
 
 from lasagne.layers import FeaturePoolLayer, batch_norm
-from lasagne.nonlinearities import rectify, softmax, linear, sigmoid, elu
+from lasagne.nonlinearities import softmax, linear, sigmoid, elu
 from lasagne.objectives import aggregate, categorical_crossentropy
 from lasagne.init import HeNormal
 from lasagne.init import Glorot, Normal
@@ -97,7 +97,7 @@ class Maxout():
     def add_maxout_layer(self, network, num_nodes=240):
         network = lasagne.layers.DropoutLayer(network, p=self.dropout)
         network = lasagne.layers.DenseLayer(network, nonlinearity=None, num_units=num_nodes, W=Glorot(Normal))
-        return lasagne.layers.FeaturePoolLayer(incoming=network, pool_size=4,
+        return lasagne.layers.FeaturePoolLayer(incoming=network, pool_size=2,
                                     axis=1, pool_function=theano.tensor.max)
 
 

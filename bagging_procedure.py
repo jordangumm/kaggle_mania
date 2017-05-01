@@ -43,6 +43,7 @@ def train_with_bagging(train_df, features, verbose, batch_size, num_epochs,
 
     holdout_losses = []
     bayes_holdout_losses = []
+    holdout_num = 0
     for train_index, test_index in kf.split(train_df):
 
         # bagging uses original training set as validation set
@@ -89,8 +90,8 @@ def train_with_bagging(train_df, features, verbose, batch_size, num_epochs,
             iter_preds = maxout_trainer.predict_proba(test_X)
             bayes_iter_preds = maxout_trainer.predict_bayes_proba(test_X)
 
-            print 'holdout loss: {}\tholdout bayes loss: {}'.format(log_loss(test_y, iter_preds),
-                                                                  log_loss(test_y, bayes_iter_preds))
+            #print 'holdout loss: {}\tholdout bayes loss: {}'.format(log_loss(test_y, iter_preds),
+            #                                                      log_loss(test_y, bayes_iter_preds))
 
             #from lime.lime_tabular import LimeTabularExplainer
             #explainer = LimeTabularExplainer(train_X, feature_names=features, class_names=['lost', 'won'], discretize_continuous=True)
@@ -104,11 +105,12 @@ def train_with_bagging(train_df, features, verbose, batch_size, num_epochs,
 
         final_preds = [np.mean(p) for p in pred_outputs]
         final_bayes_preds = [np.mean(p) for p in bayes_pred_outputs]
-        print 'final holdout loss:\t{}'.format(log_loss(test_y, final_preds))
-        print 'final bayes holdout loss:\t{}'.format(log_loss(test_y, final_bayes_preds))
+        print 'holdout {} loss:\t{}'.format(holdout_num, log_loss(test_y, final_preds))
+        print 'holdout {} bayes loss:\t{}'.format(holdout_num, log_loss(test_y, final_bayes_preds))
         print
         holdout_losses.append(log_loss(test_y, final_preds))
         bayes_holdout_losses.append(log_loss(test_y, final_bayes_preds))
+        holdout_num += 1
 
     if verbose:
         sys.exit('only one iteration for verbose debugging')
@@ -131,7 +133,7 @@ def train_with_bagging(train_df, features, verbose, batch_size, num_epochs,
 def run(num_nodes, num_layers, dropout, learning_rate,
         eval_type, batch_size, early_stop, verbose, max_epochs,
                             num_baggs, maxout_type, test_season):
-    for i, s in enumerate(xrange(2003,2017)):
+    for i, s in enumerate(xrange(2010,2017)):
         if i == 0:
             df = pd.read_csv('data/games/{}_tourney_diff_games.csv'.format(s))
             df['season'] = s
@@ -151,16 +153,24 @@ def run(num_nodes, num_layers, dropout, learning_rate,
     features.remove('seed')
     #features.remove('_seed')
 
-    def normalize(data):
-        for key in data.keys():
-            if not key in features: continue
-            mean = data[key].mean()
-            std = data[key].std()
-            data.loc[:, key] = data[key].apply(lambda x: x - mean / std)
-        return data
+    def normalize(df):
+        df[features] = (df[features]-df[features].mean())/df[features].std()
+        #for key in df.keys():
+        #    if not key in features: continue
+        #    df[key] = df[key]/df[key].loc[df.abs().idxmax()].astype(np.float64)
+        #    df[key]=(df-df.mean())/df.std()
+
+            #mean = data[key].mean()
+            #std = data[key].std()
+            #data.loc[:, key] = data.loc[:, key].apply(lambda x: x - mean / std)
+            #data.loc[:, key] = data.loc[:, key].apply(lambda x: (x - data[key].min()) / (data[key].max() - data[key].min()))
+        return df
 
     train_df = normalize(df[df['season'] < test_season])
     test_df = normalize(df[df['season'] == test_season])
+
+    #train_df = df[df['season'] < test_season]
+    #test_df = df[df['season'] == test_season]
 
     train_with_bagging(train_df=train_df, test_df=test_df, features=features,
                 batch_size=batch_size, num_epochs=max_epochs,

@@ -5,6 +5,8 @@ import click
 import os, sys
 import numpy as np
 
+from tqdm import tqdm
+
 
 def generate_agg_stats(fps):
     """ Generate aggregate DataFrame from input file list
@@ -27,13 +29,13 @@ def add_offensive_efficiency(stats):
     * (Tm FGA - Tm FG) + Tm TOV) + (Opp FGA + 0.4 * Opp FTA - 1.07
     * (Opp ORB / (Opp ORB + Tm DRB)) * (Opp FGA - Opp FG) + Opp TOV))
     """
-    stats['oe'] = 100 * stats['pts'] / 0.5 * ((stats['fga'] + 0.4 * stats['fta'] - 1.07 \
+    stats['oe'] = 100 * stats['score'] / 0.5 * ((stats['fga'] + 0.4 * stats['fta'] - 1.07 \
       * (stats['or'] / (stats['or'] + stats['opp_dr'])) * (stats['fga'] - stats['fgm']) + stats['to'])
       + (stats['opp_fga'] + 0.4 * stats['opp_fta'] - 1.07 * (stats['opp_or'] / (stats['opp_or'] + stats['dr']))
       * (stats['opp_fga'] - stats['opp_fgm']) + stats['opp_to']))
 
 
-    stats['opp_oe'] = 100 * stats['opp_pts'] / 0.5 * ((stats['opp_fga'] + 0.4 * stats['opp_fta'] - 1.07 \
+    stats['opp_oe'] = 100 * stats['opp_score'] / 0.5 * ((stats['opp_fga'] + 0.4 * stats['opp_fta'] - 1.07 \
       * (stats['opp_or'] / (stats['opp_or'] + stats['dr'])) * (stats['opp_fga'] - stats['opp_fgm']) + stats['opp_to'])
       + (stats['fga'] + 0.4 * stats['fta'] - 1.07 * (stats['or'] / (stats['or'] + stats['opp_dr']))
       * (stats['fga'] - stats['fgm']) + stats['to']))
@@ -45,10 +47,25 @@ def add_efficient_offensive_production(stats):
     raw_eop = (.76 * ast + pts) * OE
     """
     stats['oe2'] = (stats['fg'] + stats['ast']) / (stats['fga'] - stats['or'] + stats['ast'] + stats['to'])
-    stats['raw_eop'] = (.76 * stats['ast'] + stats['pts']) * stats['oe2']
-    stats['eop'] = stats['raw_eop'] * (np.sum(stats['pts']) / (stats['oe'] * (stats['pts'] + .76 * stats['ast'])))
+    stats['raw_eop'] = (.76 * stats['ast'] + stats['score']) * stats['oe2']
+    stats['eop'] = stats['raw_eop'] * (np.sum(stats['score']) / (stats['oe'] * (stats['score'] + .76 * stats['ast'])))
+    return stats
 
+def add_efficient_field_goal_percentage(stats):
+    """
+    (FGM + 0.5 * 3PM) / FGA
+    """
+    stats['efgp'] = (stats['fgm'] * 0.5 * stats['fgm3']) / stats['fga'] # incorporate fga3?
+    stats['opp_efgp'] = (stats['opp_fgm'] * 0.5 * stats['opp_fgm3']) / stats['opp_fga']
+    return stats
 
+def add_turnovers_per_possession(stats):
+    """
+    TOV/POSS
+    FYI: possessions are calculated to be equal between teams
+    """
+    stats['topp'] = stats['to'] / stats['possessions']
+    stats['opp_topp'] = stats['opp_to'] / stats['possessions']
     return stats
 
 
@@ -57,11 +74,19 @@ def add_defensive_efficiency(stats):
     possessions = FGA + 0.475 x FTA - ORB + TO
     de = (Opponent's Points Allowed/ Opponent's Possessions) x 100
     """
-    opp_pos = stats['opp_fga'] + 0.475 * stats['opp_fta'] - stats['opp_or'] + stats['opp_to']
-    stats['de'] = (stats['opp_pts'] / opp_pos) * 100
+    stats['de'] = (stats['opp_score'] / stats['possessions']) * 100
+    stats['opp_de'] = (stats['score'] / stats['possessions']) * 100
+    return stats
 
-    pos = stats['fga'] + 0.475 * stats['fta'] - stats['or'] + stats['to']
-    stats['opp_de'] = (stats['pts'] / opp_pos) * 100
+
+def add_possessions(stats):
+    """
+    Best estimates are averaged over both team and opponents
+    POSS = 0.976 * (FGA + 0.44 * FTAt - OREBt + TOt)
+    """
+    stats['possessions'] = (0.976 + (stats['fga'] + 0.44 * stats['fta'] - stats['or'] + stats['to']))
+    stats['possessions'] += (0.976 + (stats['opp_fga'] + 0.44 * stats['opp_fta'] - stats['opp_or'] + stats['opp_to']))
+    stats['possessions'] /= 2.0
     return stats
 
 
@@ -71,40 +96,34 @@ def add_pythag_win_expectation(stats):
     pythag = pts^x / (pts^x + opp_pts^x)
     where x is 16.5 as determined in A Starting Point for Analyzing Basketball
     """
-    stats['pythag'] = stats['pts_pm']**16.5 / (stats['pts_pm']**16.5 + stats['opp_pts_pm']**16.5)
-    stats['opp_pythag'] = stats['opp_pts_pm']**16.5 / (stats['opp_pts_pm']**16.5 + stats['pts_pm']**16.5)
+    stats['pythag'] = stats['score']**16.5 / (stats['score']**16.5 + stats['opp_score']**16.5)
+    stats['opp_pythag'] = stats['opp_score']**16.5 / (stats['opp_score']**16.5 + stats['score']**16.5)
     return stats
 
 
 def add_rebounding_percentages(stats):
     """ Add four factors from 'starting point' article
-
-    oreb% = oreb / (oreb+dreb)
-    dreb% = dreb / (oreb+dreb)
+    OREBt / (OREBt + DREBo)
     """
-    stats['or%'] = stats['or_pm'] / (stats['or_pm'] + stats['dr_pm'])
-    stats['dr%'] = stats['dr_pm'] / (stats['or_pm'] + stats['dr_pm'])
+    stats['or%'] = stats['or'] / (stats['or'] + stats['opp_dr'])
+    stats['opp_or%'] = stats['opp_or'] / (stats['opp_or'] + stats['dr'])
 
-    stats['opp_or%'] = stats['opp_or_pm'] / (stats['opp_or_pm'] + stats['opp_dr_pm'])
-    stats['opp_dr%'] = stats['opp_dr_pm'] / (stats['opp_or_pm'] + stats['opp_dr_pm'])
+    stats['dr%'] = stats['dr'] / (stats['dr'] + stats['opp_or'])
+    stats['opp_dr%'] = stats['opp_dr'] / (stats['opp_dr'] + stats['or'])
     return stats
 
+def add_free_throw_rate(stats):
+    """
+    FTM / POSS
+    """
+    stats['ftr'] = stats['ftm'] / stats['possessions']
+    stats['opp_ftr'] = stats['opp_ftm'] / stats['possessions']
+    return stats
 
 def add_ast_to_tov(stats):
     """
     """
     stats['ast/to'] = stats['ast_pm'] / stats['to_pm']
-    return stats
-
-
-def add_turnovers_per_possession(stats):
-    """
-    topp = to/poss
-    where poss = FGA + 0.5 * FTA - OREB + TO
-    """
-    stats['fgapm'] = stats['fga'] / stats['mp']
-    stats['possessionspm'] = ((stats['fgapm'] + 0.5) * stats['ftapm']) - stats['orpm'] + stats['to_pm']
-    stats['to_pp'] = stats['to_pm'] / stats['possessionspm']
     return stats
 
 
@@ -283,10 +302,9 @@ def run(game_type):
     if not os.path.exists('data/games'):
         os.mkdir('data/games')
 
-    for season in xrange(2003,2018):
-        print season
+    for season in tqdm(xrange(2010,2018)):
         stats = pd.read_csv('data/intermediate/team_regular_season_stats.csv')
-        metrics = pd.read_csv('data/intermediate/player_stats.csv')
+        metrics = pd.read_csv('data/intermediate/player_metrics.csv')
 
         stats = stats[stats['season'] == season]
         metrics = metrics[metrics['season'] == season]
@@ -294,33 +312,25 @@ def run(game_type):
         stats = stats.merge(metrics)
         #stats = filter_out_nontourney_teams(stats, games[games['Season'] == season])
 
-        stats['fg_pct'] = stats['fgm']/stats['fga']
-        stats['fg3_pct'] = stats['fgm3']/stats['fga3']
-        stats['opp_fg_pct'] = stats['opp_fgm']/stats['opp_fga']
-        stats['opp_fg3_pct'] = stats['opp_fgm3']/stats['opp_fga3']
-        stats['ast/to'] = stats['ast']/stats['to']
-
-        stats['pts'] = stats['score']
-        stats['opp_pts'] = stats['opp_score']
-        del stats['score']
-        del stats['opp_score']
-        #del stats['team_name']
-
+        stats = add_possessions(stats)
         stats = add_offensive_efficiency(stats)
         stats = add_defensive_efficiency(stats)
 
-        stats_to_convert = ['fgm','fga','fgm3','fga3','ast','blk','ftm','fta',
-                            'stl','pts','or','dr','pf','to']
-        for s in stats_to_convert:
-            stats['{}_pm'.format(s)] = stats['{}'.format(s)]/stats['minutes_played']
-            stats['opp_{}_pm'.format(s)] = stats['opp_{}'.format(s)]/stats['minutes_played']
-            del stats['{}'.format(s)]
-            del stats['opp_{}'.format(s)]
-        del stats['minutes_played']
+        # 4 factors
+        stats = add_efficient_field_goal_percentage(stats)
+        stats = add_turnovers_per_possession(stats)
+        stats = add_rebounding_percentages(stats)
+        stats = add_free_throw_rate(stats)
 
         stats = add_pythag_win_expectation(stats)
-        #stats = add_turnovers_per_possession(stats)
-        stats = add_rebounding_percentages(stats)
+
+        del stats['minutes_played']
+        stats_to_delete = ['fgm','fga','fgm3','fga3','ast','blk','ftm','fta',
+                            'stl','or','dr','pf','to','score']
+        for s in stats_to_delete:
+            del stats['{}'.format(s)]
+            del stats['opp_{}'.format(s)]
+
         #stats = add_efficient_offensive_production(stats) -- could this be biased??
 
         if not os.path.exists('data/final'):

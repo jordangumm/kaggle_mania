@@ -45,7 +45,7 @@ class ModelSelector():
         scores = bagging_procedure.train_with_bagging(train_df=self.train_df,
             features=self.features, verbose=False, batch_size=1, num_epochs=99999,
             num_layers=num_layers,num_nodes=num_nodes,dropout_p=dropout_p,learning_rate=eta,
-            early_stop_rounds=10, num_baggs=3, weight_decay=weight_decay)
+            early_stop_rounds=10, num_baggs=10, weight_decay=weight_decay)
 
         print tuple(scores)
         return tuple(scores)
@@ -63,12 +63,9 @@ class ModelSelector():
         return num
 
     def random_mutation(self, mutant, toolbox):
-        """ TODO """
-        print 'original: {}'.format(mutant)
-        mutant = toolbox.population(n=10)[0]
-        print 'mutant: {}'.format(mutant)
-        sys.exit()
-        return mutant
+        """ Mutate based on sample of preset population distributions """
+        indi_tmp = toolbox.population(n=1)[0]
+        return toolbox.mate(indi_tmp, mutant, .5)[1]
 
     def select_best(self, individuals, k):
         """ Return k best non-duplicate individuals """
@@ -119,32 +116,56 @@ class ModelSelector():
         toolbox.register("population", tools.initRepeat, list, toolbox.individual)
         return toolbox
 
+
     def select_best_model(self):
         """ """
+        def write_generation_results(pop, generation, overwrite=False):
+            """ """
+            write_type = 'w'
+            if overwrite: write_type = 'w+'
+            output = open('output/models/{}_{}_performance.csv'.format(self.model_type,
+                                        self.test_df['season'].unique()[0]), write_type)
+            if overwrite: output.write('generation,num_layers,num_nodes,dropout_p,weight_decay,eta,avg_loss\n')
+            for p in pop:
+                print p
+            print dir(pop)
+
         toolbox = self.get_toolbox()
-        pop = toolbox.population(n=2)
+        pop = toolbox.population(n=10)
+
         fitnesses = toolbox.map(toolbox.evaluate, pop)
         for ind, fit in zip(pop, fitnesses):
             ind.fitness.values = fit
+        write_generation_results(pop, 0, overwrite=True)
 
         for g in range(self.ngen):
             print 'GENERATION {}'.format(g)
-            offspring = toolbox.select(pop, 2)
-            offspring = map(toolbox.clone, offspring)
+            # 2x survivors
+            survivors = toolbox.select(pop, 2)
 
-            children = map(toolbox.clone, offspring)
+            # 2x children
+            children = map(toolbox.clone, map(toolbox.clone, survivors))
             children = toolbox.mate(children[0], children[1], .5)
 
-            new = toolbox.population(n=6)
-            [new.append(off) for off in offspring]
-            [new.append(ch) for ch in children]
-            offspring = map(toolbox.clone, new)
+            # 2x mutants
+            mutants = []
+            tmp = map(toolbox.clone, map(toolbox.clone, survivors))
+            mutants.append(toolbox.mutate(tmp[0], toolbox))
+            mutants.append(toolbox.mutate(tmp[1], toolbox))
 
-            fitnesses = toolbox.map(toolbox.evaluate, offspring)
-            for ind, fit in zip(offspring, fitnesses):
+            # 4x new blood
+            new = toolbox.population(n=4)
+            [new.append(off) for off in survivors]
+            [new.append(ch) for ch in children]
+            [new.append(mu) for mu in mutants]
+            generation = map(toolbox.clone, new)
+
+            fitnesses = toolbox.map(toolbox.evaluate, generation)
+            for ind, fit in zip(generation, fitnesses):
                 ind.fitness.values = fit
 
-            pop[:] = offspring
+            pop[:] = generation
+            write_generation_results(pop, g)
         best = toolbox.select(pop, 1)[0]
         print 'best: {}'.format(mean(best.fitness.values))
 
@@ -154,10 +175,10 @@ class ModelSelector():
 @click.argument('season_to_predict', type=click.INT)
 @click.option('-model_type', default='maxout')
 def run(ngen, season_to_predict, model_type):
-    if season_to_predict not in xrange(2008,2017):
+    if season_to_predict not in xrange(2014,2017):
         sys.exit("season {} not in 2008-2016 prediction range".format(season_to_predict))
 
-    for i, s in enumerate(xrange(2003,2017)):
+    for i, s in enumerate(xrange(2010,2017)):
         if i == 0:
             df = pd.read_csv('data/games/{}_tourney_diff_games.csv'.format(s))
             df['season'] = s

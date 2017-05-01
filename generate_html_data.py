@@ -5,6 +5,7 @@ import os, sys
 import re
 
 from bs4 import BeautifulSoup
+from tqdm import tqdm
 
 
 def convert_html_tables_to_csv():
@@ -44,8 +45,8 @@ def get_stat_balance(player_df, team_df, team_id, stat):
     team_stat = float(team_df[stat].unique()[0])
     team_mp = float(team_df['MP'].unique()[0])
 
-    print '{}: {}'.format(stat, team_stat)
-    print 'team_mp: {}'.format(team_mp)
+    #print '{}: {}'.format(stat, team_stat)
+    #print 'team_mp: {}'.format(team_mp)
     h_st = 0.0
     h_mp = 0.0
     for i, player in player_df.iterrows():
@@ -60,11 +61,13 @@ def get_stat_balance(player_df, team_df, team_id, stat):
 
 def generate_player_metrics():
     """ output player_regular_season_stats.csv
+
+    TODO: calculate balance metrics by possession instead of minutes to allow more seasons to be added!
     """
     data_path = './data/intermediate'
     output_df = None
-    for season in xrange(2003,2018):
-        print season
+    for season in tqdm(xrange(2010,2018)):
+        #print season
         for f in os.listdir(os.path.join(data_path, str(season), 'per_game')):
             metrics = {}
             metrics['kaggle_id'] = int(f.split('_')[-1].split('.')[0])
@@ -72,10 +75,9 @@ def generate_player_metrics():
 
             player_df = pd.read_csv(os.path.join(data_path, str(season), 'per_game', f))
             team_df = pd.read_csv(os.path.join(data_path, str(season), 'team_stats', f))
-            team_df[team_df['Unnamed: 0'] == 'Team']
+            team_df = team_df[team_df['Unnamed: 0'] == 'Team']
 
-            print get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'PTS')
-            sys.exit()
+            #print get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'PTS')
 
             metrics['pts_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'PTS')
             metrics['pf_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'PF')
@@ -84,14 +86,14 @@ def generate_player_metrics():
             metrics['stl_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'STL')
             metrics['ast_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'AST')
             metrics['trb_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'TRB')
-            metrics['fta_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'FTA')
+            #metrics['fta_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'FTA')
             metrics['ft_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'FT')
-            metrics['3pa_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], '3PA')
+            #metrics['3pa_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], '3PA')
             metrics['3p_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], '3P')
-            metrics['2pa_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], '2PA')
+            #metrics['2pa_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], '2PA')
             metrics['2p_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], '2P')
-            metrics['fga_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'FGA')
-            metrics['fg_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'FG')
+            #metrics['fga_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'FGA')
+            #metrics['fg_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'FG')
 
             if type(output_df) == type(None):
                 output_df = pd.DataFrame(metrics, index=xrange(0,len(metrics.keys())))
@@ -148,7 +150,7 @@ def generate_player_stats():
 
     data_path = './data/intermediate'
     output_df = None
-    for season in xrange(2003,2018):
+    for season in xrange(2010,2018):
         print season
         for team_num, f in enumerate(os.listdir(os.path.join(data_path, str(season), 'per_game'))):
             metrics = {}
@@ -168,7 +170,7 @@ def generate_player_stats():
             for i, player in player_df.iterrows():
                 if i > 6: break
                 #print 'player {}'.format(i)
-                for metric in ('PTS','BLK','STL','AST','TRB','FTA','FT','3PA','3P','2PA','2P','FGA','FG','FG%','2P%','3P%'):
+                for metric in ('PTS','BLK','STL','AST','TRB','FTA','FT','3PA','3P','2PA','2P','FGA','FG'):
                     metrics['{}_pg_{}'.format(metric.lower(), i)] = player[metric]
 
                 player_class = roster_df[roster_df['Player'] == player['Player']]['Class'].unique()[0]
