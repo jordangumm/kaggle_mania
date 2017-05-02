@@ -1,4 +1,14 @@
+#!/usr/bin/env python
 """ Generate Final Games Files for Model Use """
+
+# conda execute
+# env:
+#  - python >=2
+#  - beautifulsoup4
+#  - pandas
+#  - tqdm
+# run_with: python2
+
 
 import pandas as pd
 import click
@@ -121,8 +131,7 @@ def add_free_throw_rate(stats):
     return stats
 
 def add_ast_to_tov(stats):
-    """
-    """
+    """ Create ratio of assists to turnovers  """
     stats['ast/to'] = stats['ast_pm'] / stats['to_pm']
     return stats
 
@@ -139,8 +148,6 @@ def convert_stats_to_ranks(data):
     return data
 
 def create_classification_games(stats, games, season, game_type):
-    """
-    """
     output = open('data/games/{}_{}_games.csv'.format(season, game_type), 'w+')
     features = [f for f in stats.keys() if f not in ['team_name', 'season', 'kaggle_id']]
     header = [f for f in stats.keys() if f not in ['team_name', 'season', 'kaggle_id']]
@@ -158,7 +165,7 @@ def create_classification_games(stats, games, season, game_type):
     diff_output.write('\n')
 
 
-    for game in games[games['Season'] == season].iterrows():
+    for game in tqdm(games[games['Season'] == season].iterrows()):
         game = game[1]
         wteam = stats[(stats['kaggle_id'] == game['Wteam']) & (stats['season'] == season)]
         lteam = stats[(stats['kaggle_id'] == game['Lteam']) & (stats['season'] == season)]
@@ -203,64 +210,6 @@ def create_classification_games(stats, games, season, game_type):
     output.close()
 
 
-def create_regression_games(stats, games, season, game_type, stat_to_learn='pts'):
-    """
-    """
-    output = open('data/games/{}_{}_games_{}.csv'.format(season, game_type, stat_to_learn), 'w+')
-    features = [f for f in stats.keys() if f not in ['team_name', 'season', 'kaggle_id']]
-    header = [f for f in stats.keys() if f not in ['team_name', 'season', 'kaggle_id']]
-    [header.append('_{}'.format(f)) for f in stats.keys() if f not in ['team_name', 'season', 'kaggle_id']]
-    output.write('won,')
-    output.write(','.join(header))
-    output.write('\n')
-
-    stats = convert_stats_to_ranks(stats)
-
-    diff_output = open('data/games/{}_{}_diff_games_{}.csv'.format(
-                                season, game_type, stat_to_learn), 'w+')
-    diff_output.write('won,')
-    header = [f for f in stats.keys() if f not in ['team_name', 'season', 'kaggle_id']]
-    diff_output.write(','.join([s for s in header]))
-    diff_output.write('\n')
-
-    for game in games[games['Season'] == season].iterrows():
-        game = game[1]
-        wteam = stats[(stats['kaggle_id'] == game['Wteam']) & (stats['season'] == season)]
-        lteam = stats[(stats['kaggle_id'] == game['Lteam']) & (stats['season'] == season)]
-
-        wkaggle = wteam['kaggle_id'].unique()[0]
-        lkaggle = lteam['kaggle_id'].unique()[0]
-
-        wstats = wteam[features].values[0]
-        lstats = lteam[features].values[0]
-
-        #print('{} over {}'.format(game['W{}'.format(stat_to_learn)], game['L{}'.format(stat_to_learn)]))
-
-        output.write('{},'.format(game['W{}'.format(stat_to_learn)]))
-        output.write(','.join(str(x) for x in wstats))
-        output.write(',')
-        output.write(','.join(str(x) for x in lstats))
-        output.write('\n')
-
-        output.write('{},'.format(game['L{}'.format(stat_to_learn)]))
-        output.write(','.join(str(x) for x in lstats))
-        output.write(',')
-        output.write(','.join(str(x) for x in wstats))
-        output.write('\n')
-
-        diff_stats = wstats-lstats
-        diff_output.write('{},'.format(game['W{}'.format(stat_to_learn)]))
-        diff_output.write(','.join(str(x) for x in diff_stats))
-        diff_output.write('\n')
-
-        diff_stats = lstats-wstats
-        diff_output.write('{},'.format(game['L{}'.format(stat_to_learn)]))
-        diff_output.write(','.join(str(x) for x in diff_stats))
-        diff_output.write('\n')
-
-    output.close()
-
-
 def filter_biased_stats(stats):
     """ Return dataframe without biased stats
 
@@ -283,10 +232,11 @@ def filter_out_nontourney_teams(stats, games):
 
     return stats[stats['kaggle_id'].isin(tourney_teams)]
 
+
 @click.command()
 @click.argument('game_type')
 def run(game_type):
-    """ Generate final games file for model use
+    """ Generat final games file for model use
 
     Arguments:
     box - pandas DataFrame of yearly box-score stats for each team
@@ -331,7 +281,7 @@ def run(game_type):
             del stats['{}'.format(s)]
             del stats['opp_{}'.format(s)]
 
-        #stats = add_efficient_offensive_production(stats) -- could this be biased??
+        stats = add_efficient_offensive_production(stats)
 
         if not os.path.exists('data/final'):
             os.mkdir('data/final')
@@ -342,7 +292,6 @@ def run(game_type):
         """
 
         create_classification_games(stats, games, season, game_type)
-        #create_regression_games(stats, games, season, game_type, 'score')
 
 
 if __name__ == '__main__':

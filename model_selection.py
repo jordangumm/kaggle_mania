@@ -1,6 +1,20 @@
-""" Automated model selection for those implemented in models directory
+#!/usr/bin/env python
+""" Automated model selection for those implemented in models directory """
 
-"""
+# conda execute
+# env:
+#  - python >=2
+#  - pandas
+#  - numpy
+#  - click
+#  - sklearn
+#  - lime
+#  - h5py
+#  - theano
+#  - lasagne
+#  - deap
+# run_with: python2
+
 
 import sys
 import click
@@ -171,9 +185,9 @@ class ModelSelector():
 
 
 @click.command()
-@click.argument('ngen', type=click.INT)
-@click.argument('season_to_predict', type=click.INT)
-@click.option('-model_type', default='maxout')
+@click.option('-ngen', type=click.INT, default=10)
+@click.option('-season_to_predict', type=click.INT, default=2014)
+@click.option('-model_type', default='maxout') # maxout, maxout_residual, maxout_dense
 def run(ngen, season_to_predict, model_type):
     if season_to_predict not in xrange(2014,2017):
         sys.exit("season {} not in 2008-2016 prediction range".format(season_to_predict))

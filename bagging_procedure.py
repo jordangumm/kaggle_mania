@@ -1,9 +1,20 @@
-""" Bagging Procedure
+#!/usr/bin/env python
 
-"""
+# conda execute
+# env:
+#  - python >=2
+#  - pandas
+#  - numpy
+#  - click
+#  - sklearn
+#  - lime
+#  - h5py
+#  - theano
+#  - lasagne
+# run_with: python2
+
 
 import sys
-
 import pandas as pd
 import numpy as np
 import click
@@ -118,8 +129,8 @@ def train_with_bagging(train_df, features, verbose, batch_size, num_epochs,
 
 
 @click.command()
-@click.argument('num_nodes', type=click.INT)
-@click.argument('num_layers', type=click.INT)
+@click.option('-num_nodes', type=click.INT, default=48)
+@click.option('-num_layers', type=click.INT, default=1)
 @click.option('-dropout', type=click.FLOAT, default=0.263817749011)
 @click.option('-learning_rate', type=click.FLOAT, default=0.0331640958066)
 @click.option('-eval_type', type=click.STRING, default='log_loss')

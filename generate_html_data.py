@@ -1,3 +1,15 @@
+#!/usr/bin/env python
+""" Parse HTML data to generate box score statistics """
+
+# conda execute
+# env:
+#  - python >=2
+#  - beautifulsoup4
+#  - pandas
+#  - tqdm
+# run_with: python2
+
+
 import pandas as pd
 import math
 import csv
@@ -17,9 +29,8 @@ def convert_html_tables_to_csv():
     def cell_text(cell):
         return " ".join(cell.stripped_strings)
 
-    for season in xrange(2003,2018):
-        print season
-        for f in os.listdir(os.path.join(html_path, str(season))):
+    for season in tqdm(xrange(2010,2018)):
+        for f in tqdm(os.listdir(os.path.join(html_path, str(season)))):
             html_fp = os.path.join(html_path, str(season), f)
             html = open(html_fp).read()
             if 'Page Not Found (404 error)' in html:
@@ -45,8 +56,6 @@ def get_stat_balance(player_df, team_df, team_id, stat):
     team_stat = float(team_df[stat].unique()[0])
     team_mp = float(team_df['MP'].unique()[0])
 
-    #print '{}: {}'.format(stat, team_stat)
-    #print 'team_mp: {}'.format(team_mp)
     h_st = 0.0
     h_mp = 0.0
     for i, player in player_df.iterrows():
@@ -62,13 +71,12 @@ def get_stat_balance(player_df, team_df, team_id, stat):
 def generate_player_metrics():
     """ output player_regular_season_stats.csv
 
-    TODO: calculate balance metrics by possession instead of minutes to allow more seasons to be added!
     """
     data_path = './data/intermediate'
     output_df = None
     for season in tqdm(xrange(2010,2018)):
-        #print season
-        for f in os.listdir(os.path.join(data_path, str(season), 'per_game')):
+	
+        for f in tqdm(os.listdir(os.path.join(data_path, str(season), 'per_game'))):
             metrics = {}
             metrics['kaggle_id'] = int(f.split('_')[-1].split('.')[0])
             metrics['season'] = season
@@ -76,8 +84,6 @@ def generate_player_metrics():
             player_df = pd.read_csv(os.path.join(data_path, str(season), 'per_game', f))
             team_df = pd.read_csv(os.path.join(data_path, str(season), 'team_stats', f))
             team_df = team_df[team_df['Unnamed: 0'] == 'Team']
-
-            #print get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'PTS')
 
             metrics['pts_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'PTS')
             metrics['pf_balance'] = get_stat_balance(player_df, team_df, metrics['kaggle_id'], 'PF')
@@ -151,7 +157,6 @@ def generate_player_stats():
     data_path = './data/intermediate'
     output_df = None
     for season in xrange(2010,2018):
-        print season
         for team_num, f in enumerate(os.listdir(os.path.join(data_path, str(season), 'per_game'))):
             metrics = {}
             metrics['kaggle_id'] = int(f.split('_')[-1].split('.')[0])
@@ -161,15 +166,12 @@ def generate_player_stats():
             #player_df = player_df[player_df['G'] > 8]
             roster_df = pd.read_csv(os.path.join(data_path, str(season), 'roster', f))
 
-            #print metrics['kaggle_id']
 
             player_df = player_df.sort_values(['G'], ascending=False) # sort players by games played
             player_df.index = range(1,len(player_df) + 1)
 
-            #print 'team {}'.format(team_num)
             for i, player in player_df.iterrows():
                 if i > 6: break
-                #print 'player {}'.format(i)
                 for metric in ('PTS','BLK','STL','AST','TRB','FTA','FT','3PA','3P','2PA','2P','FGA','FG'):
                     metrics['{}_pg_{}'.format(metric.lower(), i)] = player[metric]
 
@@ -180,7 +182,6 @@ def generate_player_stats():
                 metrics['class_{}'.format(i)] = convert_player_class(player_class)
                 metrics['pos_{}'.format(i)] = convert_player_pos(player_pos, player_height) # one hot this
                 metrics['height_{}'.format(i)] = convert_player_height(player_height, player_pos)
-            #print metrics
 
             if type(output_df) == type(None):
                 output_df = pd.DataFrame(metrics, index=xrange(0,len(metrics.keys())))
@@ -189,6 +190,6 @@ def generate_player_stats():
     output_df.drop_duplicates().to_csv(os.path.join(data_path, 'player_stats.csv'), index=None)
 
 
-#convert_html_tables_to_csv()
+convert_html_tables_to_csv()
 generate_player_metrics()
 #generate_player_stats()
