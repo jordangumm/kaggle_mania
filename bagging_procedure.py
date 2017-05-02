@@ -103,9 +103,6 @@ def train_with_bagging(train_df, features, verbose, batch_size, num_epochs,
             iter_preds = maxout_trainer.predict_proba(test_X)
             bayes_iter_preds = maxout_trainer.predict_bayes_proba(test_X)
 
-            #print 'holdout loss: {}\tholdout bayes loss: {}'.format(log_loss(test_y, iter_preds),
-            #                                                      log_loss(test_y, bayes_iter_preds))
-
             #from lime.lime_tabular import LimeTabularExplainer
             #explainer = LimeTabularExplainer(train_X, feature_names=features, class_names=['lost', 'won'], discretize_continuous=True)
             #for game_num, test_example in enumerate(test_X):
@@ -166,19 +163,6 @@ def run(num_nodes, num_layers, dropout, learning_rate,
     #features.remove('seed')
     #features.remove('_seed')
 
-    #def normalize(df):
-        #df[features] = (df[features]-df[features].mean())/df[features].std()
-    #    for key in df.keys():
-    #        if not key in features: continue
-            #df[key] = df[key]/df[key].loc[df.abs().idxmax()].astype(np.float64)
-        #    df[key]=(df[key]-df[key].mean())/df.std()
-
-            #mean = data[key].mean()
-            #std = data[key].std()
-            #data.loc[:, key] = data.loc[:, key].apply(lambda x: x - mean / std)
-            #data.loc[:, key] = data.loc[:, key].apply(lambda x: (x - data[key].min()) / (data[key].max() - data[key].min()))
-    #    return df
-
     def normalize(data):
         for key in data.keys():
             if not key in features: continue
@@ -189,9 +173,6 @@ def run(num_nodes, num_layers, dropout, learning_rate,
 
     train_df = normalize(df[df['season'] < test_season])
     test_df = normalize(df[df['season'] == test_season])
-
-    #train_df = df[df['season'] < test_season]
-    #test_df = df[df['season'] == test_season]
 
     train_with_bagging(train_df=train_df, features=features,
                 batch_size=batch_size, num_epochs=max_epochs,
