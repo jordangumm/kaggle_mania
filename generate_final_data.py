@@ -56,7 +56,7 @@ def add_efficient_offensive_production(stats):
     """
     raw_eop = (.76 * ast + pts) * OE
     """
-    stats['oe2'] = (stats['fg'] + stats['ast']) / (stats['fga'] - stats['or'] + stats['ast'] + stats['to'])
+    stats['oe2'] = (stats['fgm'] + stats['ast']) / (stats['fga'] - stats['or'] + stats['ast'] + stats['to'])
     stats['raw_eop'] = (.76 * stats['ast'] + stats['score']) * stats['oe2']
     stats['eop'] = stats['raw_eop'] * (np.sum(stats['score']) / (stats['oe'] * (stats['score'] + .76 * stats['ast'])))
     return stats
@@ -271,6 +271,7 @@ def run(game_type):
         stats = add_turnovers_per_possession(stats)
         stats = add_rebounding_percentages(stats)
         stats = add_free_throw_rate(stats)
+	stats = add_efficient_offensive_production(stats)
 
         stats = add_pythag_win_expectation(stats)
 
@@ -280,8 +281,6 @@ def run(game_type):
         for s in stats_to_delete:
             del stats['{}'.format(s)]
             del stats['opp_{}'.format(s)]
-
-        stats = add_efficient_offensive_production(stats)
 
         if not os.path.exists('data/final'):
             os.mkdir('data/final')
