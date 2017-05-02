@@ -2,12 +2,14 @@
 """ Automated model selection for those implemented in models directory """
 
 # conda execute
+# channels:
+#  - conda-forge
 # env:
 #  - python >=2
 #  - pandas
 #  - numpy
 #  - click
-#  - sklearn
+#  - scikit-learn
 #  - lime
 #  - h5py
 #  - theano
