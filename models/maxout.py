@@ -54,6 +54,9 @@ class Maxout():
         self.loss = categorical_crossentropy(self.prediction, self.target_var)
         self.loss = aggregate(self.loss, mode='mean')
 
+	if not os.path.exists('output/models/'):
+	    os.mkdir('output/models')
+
         # L2 regularization with weight decay
         weightsl2 = lasagne.regularization.regularize_network_params(self.network,
                                                     lasagne.regularization.l2)
@@ -96,7 +99,7 @@ class Maxout():
 
     def add_maxout_layer(self, network, num_nodes=240):
         network = lasagne.layers.DropoutLayer(network, p=self.dropout)
-        network = lasagne.layers.DenseLayer(network, nonlinearity=None, num_units=num_nodes, W=Glorot(Normal))
+        network = lasagne.layers.DenseLayer(network, nonlinearity=None, num_units=num_nodes*2, W=Glorot(Normal))
         return lasagne.layers.FeaturePoolLayer(incoming=network, pool_size=2,
                                     axis=1, pool_function=theano.tensor.max)
 

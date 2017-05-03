@@ -137,8 +137,8 @@ class ModelSelector():
         """ """
         def write_generation_results(pop, generation, overwrite=False):
             """ """
-            write_type = 'w'
-            if overwrite: write_type = 'w+'
+            write_type = 'w+'
+            if overwrite: write_type = 'w'
             output = open('output/models/{}_{}_performance.csv'.format(self.model_type,
                                         self.test_df['season'].unique()[0]), write_type)
             if overwrite: output.write('generation,num_layers,num_nodes,dropout_p,weight_decay,eta,avg_loss\n')
@@ -192,7 +192,7 @@ class ModelSelector():
 @click.option('-model_type', default='maxout') # maxout, maxout_residual, maxout_dense
 def run(ngen, season_to_predict, model_type):
     if season_to_predict not in xrange(2014,2017):
-        sys.exit("season {} not in 2008-2016 prediction range".format(season_to_predict))
+        sys.exit("season {} not in 2014-2016 prediction range".format(season_to_predict))
 
     for i, s in enumerate(xrange(2010,2017)):
         if i == 0:

@@ -6,7 +6,7 @@ PASSWORD=$2
 mkdir -p data/original && cd data/original
 kg download -u "$USERNAME" -p "$PASSWORD" -c 'march-machine-learning-mania-2017'
 
-cd ../../
+cd ../../ && mkdir -p output/models
 
 conda install conda-execute --channel=conda-forge
 
