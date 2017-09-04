@@ -31,4 +31,9 @@ source ./miniconda/bin/activate
 conda config --add channels conda-forge
 conda install -y beautifulsoup4 click pandas tqdm numpy scikit-learn lime h5py theano lasagne deap
 
+pip install kaggle-cli
+
+mkdir -p kaggle_mania/march_mania/data/raw && cd kaggle_mania/march_mania/data/raw
+kg download -u "$USERNAME" -p "$PASSWORD" -c 'march-machine-learning-mania-2017'
+
 exit 0
