@@ -1,6 +1,0 @@
-#!/Users/jordangumm/Desktop/kaggle_mania/miniconda/bin/python
-if __name__ == '__main__':
-    import sys
-    import tqdm._main
-
-    sys.exit(tqdm._main.main())

@@ -1,7 +1,0 @@
-lib/libgcc_s.1.dylib
-lib/libgcc_s_ppc64.1.dylib
-lib/libgcc_s_x86_64.1.dylib
-lib/libgfortran.3.dylib
-lib/libgfortran.dylib
-lib/libquadmath.0.dylib
-lib/libquadmath.dylib
