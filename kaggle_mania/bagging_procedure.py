@@ -138,13 +138,11 @@ def train_with_bagging(train_df, features, verbose, batch_size, num_epochs,
 @click.option('-verbose', type=click.BOOL, default=False)
 @click.option('-max_epochs', type=click.INT, default=9999)
 @click.option('-num_baggs', type=click.INT, default=1)
-@click.option('-maxout_type', type=click.STRING, default='maxout')
-@click.option('-test_season', type=click.INT, default=2014)
-def run(num_nodes, num_layers, dropout, learning_rate,
-        eval_type, batch_size, early_stop, verbose, max_epochs,
-                            num_baggs, maxout_type, test_season):
-    for i, s in enumerate(xrange(2010,2017)):
+@click.option('-model_type', type=click.STRING, default='maxout')
+def run_bagging(num_nodes, num_layers, dropout, learning_rate, eval_type, batch_size,
+        early_stop, verbose, max_epochs, num_baggs, model_type):
         if i == 0:
+
             df = pd.read_csv('data/games/{}_tourney_diff_games.csv'.format(s))
             df['season'] = s
         else:
@@ -155,13 +153,7 @@ def run(num_nodes, num_layers, dropout, learning_rate,
     df = df.fillna(0.0)
 
     features = df.keys().tolist()
-    features.remove('season')
-    #features.remove('team_name')
-    features.remove('won')
-
-    """ Features removed due to LIME inspection """
-    #features.remove('seed')
-    #features.remove('_seed')
+    features.remove('class')
 
     def normalize(data):
         for key in data.keys():
@@ -172,8 +164,6 @@ def run(num_nodes, num_layers, dropout, learning_rate,
         return data
 
     train_df = normalize(df[df['season'] < test_season])
-    test_df = normalize(df[df['season'] == test_season])
-
     train_with_bagging(train_df=train_df, features=features,
                 batch_size=batch_size, num_epochs=max_epochs,
                 num_layers=num_layers, num_nodes=num_nodes, dropout_p=dropout,
@@ -183,4 +173,4 @@ def run(num_nodes, num_layers, dropout, learning_rate,
 
 
 if __name__ == "__main__":
-    run()
+    run_bagging()

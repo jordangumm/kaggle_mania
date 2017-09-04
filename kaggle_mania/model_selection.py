@@ -187,32 +187,20 @@ class ModelSelector():
 
 
 @click.command()
+@click.argument('train_dp')
 @click.option('-ngen', type=click.INT, default=10)
-@click.option('-season_to_predict', type=click.INT, default=2014)
 @click.option('-model_type', default='maxout') # maxout, maxout_residual, maxout_dense
-def run(ngen, season_to_predict, model_type):
-    if season_to_predict not in xrange(2014,2017):
-        sys.exit("season {} not in 2014-2016 prediction range".format(season_to_predict))
+def select_model(train_dp, ngen, model_type):
+    """ Determine best model of model type for training data
 
-    for i, s in enumerate(xrange(2010,2017)):
-        if i == 0:
-            df = pd.read_csv('data/games/{}_tourney_diff_games.csv'.format(s))
-            df['season'] = s
-        else:
-            tmp = pd.read_csv('data/games/{}_tourney_diff_games.csv'.format(s))
-            tmp['season'] = s
-            df = df.append(tmp)
+    The training CSV referenced by train_dp is assumed to have classification
+    listed first in column named 'class' followed by features to be normalized.
+    """
+    df = pd.read_csv(train_dp)
 
-    df = df.fillna(0.0)
-
+    df = df.fillna(0.0) # experiment with interpolation methods
     features = df.keys().tolist()
-    features.remove('season')
-    #features.remove('team_name')
-    features.remove('won')
-
-    """ Features removed due to LIME inspection """
-    features.remove('seed')
-    #features.remove('_seed')
+    features.remove('class')
 
     def normalize(data):
         for key in data.keys():
@@ -221,15 +209,13 @@ def run(ngen, season_to_predict, model_type):
             std = data[key].std()
             data.loc[:, key] = data[key].apply(lambda x: x - mean / std)
         return data
+    df = normalize(df)
 
-    train_df = normalize(df[df['season'] < season_to_predict])
-    test_df = normalize(df[df['season'] == season_to_predict])
-
-    selector = ModelSelector(train_df=train_df, test_df=test_df, features=features,
-                                                    eval_type='bayes_loss', ngen=ngen,
-                                                    model_type=model_type)
+    selector = ModelSelector(train_df=df, features=features,
+                                    eval_type='bayes_loss', ngen=ngen,
+                                    model_type=model_type)
     selector.select_best_model()
 
 
 if __name__ == "__main__":
-    run()
+    select_model()
