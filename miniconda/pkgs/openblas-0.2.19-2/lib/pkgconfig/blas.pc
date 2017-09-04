@@ -1,0 +1,11 @@
+libdir=/opt/anaconda1anaconda2anaconda3/lib
+includedir=/opt/anaconda1anaconda2anaconda3/include
+version=0.2.19
+extralib=-lpthread -lgfortran -lpthread -lgfortran
+Name: openblas
+Description: OpenBLAS is an optimized BLAS library based on GotoBLAS2 1.13 BSD version
+Version: ${version}
+URL: https://github.com/xianyi/OpenBLAS
+Libs: -L${libdir} -lopenblas
+Libs.private: ${extralib}
+Cflags: -I${includedir}

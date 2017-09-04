@@ -2,3 +2,5 @@ data
 *.pyc
 *.DS_Store
 output
+marchmania/data
+miniconda

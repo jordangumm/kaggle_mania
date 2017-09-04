@@ -1,0 +1,24 @@
+# This file created by conda-build 1.21.14+0.g4dfebe9.dirty
+# meta.yaml template originally from:
+# /Users/travis/build/conda-forge/conda-env-feedstock/recipe, last modified Thu Oct 27 04:55:52 2016
+# ------------------------------------------------
+
+package:
+    name: conda-env
+    version: 2.6.0
+build:
+    number: '0'
+test:
+    requires:
+        - python
+about:
+    home: https://github.com/conda/conda-env
+    license: BSD 3-Clause
+    summary: Tools for interacting with conda environments.
+extra:
+    recipe-maintainers:
+        - jakirkham
+        - kalefranz
+        - mcg1969
+        - msarahan
+        - pelson

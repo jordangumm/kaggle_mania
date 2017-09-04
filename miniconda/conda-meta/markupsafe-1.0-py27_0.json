@@ -1,0 +1,48 @@
+{
+  "arch": "x86_64",
+  "auth": null,
+  "build": "py27_0",
+  "build_number": 0,
+  "channel": "https://conda.anaconda.org/conda-forge/osx-64",
+  "depends": [
+    "python 2.7*"
+  ],
+  "files": [
+    "lib/python2.7/site-packages/MarkupSafe-1.0-py2.7.egg-info/PKG-INFO",
+    "lib/python2.7/site-packages/MarkupSafe-1.0-py2.7.egg-info/SOURCES.txt",
+    "lib/python2.7/site-packages/MarkupSafe-1.0-py2.7.egg-info/dependency_links.txt",
+    "lib/python2.7/site-packages/MarkupSafe-1.0-py2.7.egg-info/not-zip-safe",
+    "lib/python2.7/site-packages/MarkupSafe-1.0-py2.7.egg-info/top_level.txt",
+    "lib/python2.7/site-packages/markupsafe/__init__.py",
+    "lib/python2.7/site-packages/markupsafe/__init__.pyc",
+    "lib/python2.7/site-packages/markupsafe/_compat.py",
+    "lib/python2.7/site-packages/markupsafe/_compat.pyc",
+    "lib/python2.7/site-packages/markupsafe/_constants.py",
+    "lib/python2.7/site-packages/markupsafe/_constants.pyc",
+    "lib/python2.7/site-packages/markupsafe/_native.py",
+    "lib/python2.7/site-packages/markupsafe/_native.pyc",
+    "lib/python2.7/site-packages/markupsafe/_speedups.c",
+    "lib/python2.7/site-packages/markupsafe/_speedups.so"
+  ],
+  "fn": "markupsafe-1.0-py27_0.tar.bz2",
+  "has_prefix": true,
+  "license": "BSD 3-Clause",
+  "license_family": "BSD",
+  "link": {
+    "source": "/Users/jordangumm/Desktop/kaggle_mania/miniconda/pkgs/markupsafe-1.0-py27_0",
+    "type": 1
+  },
+  "md5": "3da07e79407d6eafb4bc3678eade5793",
+  "name": "markupsafe",
+  "noarch": null,
+  "platform": "darwin",
+  "preferred_env": null,
+  "priority": 0,
+  "requires": [],
+  "schannel": "conda-forge",
+  "size": 22475,
+  "subdir": "osx-64",
+  "url": "https://conda.anaconda.org/conda-forge/osx-64/markupsafe-1.0-py27_0.tar.bz2",
+  "version": "1.0",
+  "with_features_depends": {}
+}

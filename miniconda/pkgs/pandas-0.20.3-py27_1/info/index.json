@@ -1,0 +1,16 @@
+{
+  "arch": "x86_64",
+  "build": "py27_1",
+  "build_number": 1,
+  "depends": [
+    "numpy >=1.7",
+    "python 2.7*",
+    "python-dateutil",
+    "pytz"
+  ],
+  "license": "BSD 3-clause",
+  "name": "pandas",
+  "platform": "osx",
+  "subdir": "osx-64",
+  "version": "0.20.3"
+}

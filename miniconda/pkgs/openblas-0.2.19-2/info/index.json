@@ -1,0 +1,13 @@
+{
+  "arch": "x86_64",
+  "build": "2",
+  "build_number": 2,
+  "depends": [
+    "libgfortran"
+  ],
+  "license": "BSD 3-Clause",
+  "name": "openblas",
+  "platform": "osx",
+  "subdir": "osx-64",
+  "version": "0.2.19"
+}

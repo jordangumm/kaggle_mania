@@ -1,0 +1,56 @@
+# This file created by conda-build 2.1.9
+# meta.yaml template originally from:
+# /Users/travis/build/conda-forge/pytz-feedstock/recipe, last modified Fri Apr  7 20:16:54 2017
+# ------------------------------------------------
+
+package:
+    name: pytz
+    version: '2017.2'
+source:
+    fn: pytz-2017.2.zip
+    sha256: f5c056e8f62d45ba8215e5cb8f50dfccb198b4b9fbea8500674f3443e4689589
+    url: https://pypi.io/packages/source/p/pytz/pytz-2017.2.zip
+build:
+    noarch: ''
+    noarch_python: false
+    number: '0'
+    script: python setup.py install --single-version-externally-managed --record=record.txt
+    string: py27_0
+requirements:
+    build:
+        - ca-certificates 2017.1.23 0
+        - certifi 2017.1.23 py27_0
+        - ncurses 5.9 10
+        - openssl 1.0.2h 3
+        - python 2.7.13 0
+        - readline 6.2 0
+        - setuptools 33.1.1 py27_0
+        - sqlite 3.13.0 1
+        - tk 8.5.19 1
+        - zlib 1.2.11 0
+    run:
+        - python
+test:
+    imports:
+        - pytz
+about:
+    description: 'pytz brings the Olson tz database into Python. This library allows
+
+        accurate and cross platform timezone calculations using Python 2.4 or
+
+        higher. It also solves the issue of ambiguous times at the end of daylight
+
+        saving time.
+
+        '
+    dev_url: https://github.com/newvem/pytz
+    doc_url: http://pythonhosted.org/pytz/
+    home: http://pythonhosted.org/pytz/
+    license: MIT
+    license_file: LICENSE.txt
+    summary: World timezone definitions, modern and historical.
+extra:
+    final: true
+    recipe-maintainers:
+        - msarahan
+        - ocefpaf

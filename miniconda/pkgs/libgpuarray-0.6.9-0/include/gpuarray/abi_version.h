@@ -1,0 +1,3 @@
+#ifndef GPUARRAY_ABI_VERSION
+#define GPUARRAY_ABI_VERSION 2001
+#endif

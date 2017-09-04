@@ -1,0 +1,8 @@
+{
+  "dev_url": "https://github.com/marcotcr/lime",
+  "doc_url": "https://lime-ml.readthedocs.io/",
+  "home": "https://github.com/marcotcr/lime",
+  "license": "BSD-2-Clause",
+  "license_family": "BSD",
+  "summary": "Explaining the predictions of any machine learning classifier"
+}

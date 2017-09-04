@@ -1,0 +1,70 @@
+{
+  "_cache_control": "public, max-age=43200", 
+  "_etag": "W/\"flask-1503336871.94-1108-658375987\"", 
+  "_mod": "Mon, 21 Aug 2017 17:33:54 GMT", 
+  "_url": "https://conda.anaconda.org/conda-forge/noarch", 
+  "info": {
+    "arch": null, 
+    "default_numpy_version": "1.7", 
+    "default_python_version": "2.7", 
+    "platform": null, 
+    "subdir": "noarch"
+  }, 
+  "packages": {
+    "pyvisa-py-0.2-py_0.tar.bz2": {
+      "arch": null, 
+      "binstar": {
+        "channel": "main", 
+        "owner_id": "5528f42ce1dad12974506e8d", 
+        "package_id": "58f864a2716f8946e230a467"
+      }, 
+      "build": "py_0", 
+      "build_number": 0, 
+      "depends": [
+        "pyserial", 
+        "python", 
+        "pyvisa >=1.8"
+      ], 
+      "has_prefix": false, 
+      "license": "MIT", 
+      "license_family": "MIT", 
+      "machine": null, 
+      "md5": "8103a6d372fd614f2433ee8a6c4f5409", 
+      "name": "pyvisa-py", 
+      "operatingsystem": null, 
+      "platform": null, 
+      "requires": [], 
+      "size": 29264, 
+      "subdir": "noarch", 
+      "target-triplet": "None-any-None", 
+      "version": "0.2"
+    }, 
+    "yarn-0.25.2-0.tar.bz2": {
+      "arch": null, 
+      "binstar": {
+        "channel": "main", 
+        "owner_id": "5528f42ce1dad12974506e8d", 
+        "package_id": "592c29895dffa1125e599b59"
+      }, 
+      "build": "0", 
+      "build_number": 0, 
+      "depends": [
+        "nodejs"
+      ], 
+      "has_prefix": false, 
+      "license": "BSD-2-Clause", 
+      "license_family": "BSD", 
+      "machine": null, 
+      "md5": "b39a914584f3132ef340c0063c033e2f", 
+      "name": "yarn", 
+      "noarch": true, 
+      "operatingsystem": null, 
+      "platform": null, 
+      "requires": [], 
+      "size": 683403, 
+      "subdir": "noarch", 
+      "target-triplet": "None-any-None", 
+      "version": "0.25.2"
+    }
+  }
+}

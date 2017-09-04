@@ -1,0 +1,363 @@
+{
+  "paths": [
+    {
+      "_path": "lib/python2.7/site-packages/pygpu-0.6.9-py2.7.egg-info/PKG-INFO",
+      "path_type": "hardlink",
+      "sha256": "b7ee2252d0db6aea834c2b54e66059dcca77a073bcbaf3552b7a826aaa32aa69",
+      "size_in_bytes": 226
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu-0.6.9-py2.7.egg-info/SOURCES.txt",
+      "path_type": "hardlink",
+      "sha256": "ed4cbbe20981d61f9bced64066802f15178bc42c70127f6fd8e90bfa0878fe18",
+      "size_in_bytes": 651
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu-0.6.9-py2.7.egg-info/dependency_links.txt",
+      "path_type": "hardlink",
+      "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+      "size_in_bytes": 1
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu-0.6.9-py2.7.egg-info/requires.txt",
+      "path_type": "hardlink",
+      "sha256": "da8988310e31b245ecc85c10137aa93c0fd533451d54508fb6f340f250968c9e",
+      "size_in_bytes": 14
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu-0.6.9-py2.7.egg-info/top_level.txt",
+      "path_type": "hardlink",
+      "sha256": "97745d62b6abca893208680fb96f08436a3c851804521fb83f8eb64740bf5087",
+      "size_in_bytes": 18
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/__init__.py",
+      "path_type": "hardlink",
+      "sha256": "abdfb50dd7508e5818582e08851a80e74fe929a904d79aa581e30ede05fe3663",
+      "size_in_bytes": 748
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/__init__.pyc",
+      "path_type": "hardlink",
+      "sha256": "ef50525a7ba17e7401cdd4d3bea4180bc59cebe90c20cf431a399cc3b8eb2538",
+      "size_in_bytes": 1547
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/_array.py",
+      "path_type": "hardlink",
+      "sha256": "b82fd454a721ba6c9c97279e7f04848d3ce0bbdeded6cc95075151cac35dc478",
+      "size_in_bytes": 10320
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/_array.pyc",
+      "path_type": "hardlink",
+      "sha256": "0869d152effeb4c8d3253ce26268885b6263b06c35ebdf0d6202ca2d9486b040",
+      "size_in_bytes": 11963
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/_elemwise.c",
+      "file_mode": "text",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+      "sha256": "e83a48add2b97d07804566b19b53a29c69404a3bd0c79e3b7ae515aab8defa2d",
+      "size_in_bytes": 507356
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/_elemwise.so",
+      "file_mode": "binary",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/Users/travis/miniconda3/conda-bld/pygpu_1501121066101/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pla",
+      "sha256": "0931581fcc56dac62de9426b59aa9ad2be8afcd2d239f68c7400ddde4efefe5a",
+      "size_in_bytes": 75040
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/basic.py",
+      "path_type": "hardlink",
+      "sha256": "9473e6a94adf49f2cd857675a67ed853cbcbf58e4e648645919c01864fb0f0a8",
+      "size_in_bytes": 1878
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/basic.pyc",
+      "path_type": "hardlink",
+      "sha256": "8fdbea38221dd03559d5b39fe4d56a4c0f9c5266a9ee7440a4f958a47093f6ec",
+      "size_in_bytes": 2417
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/blas.c",
+      "file_mode": "text",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+      "sha256": "8046b43d40a172f88ba463a03b7c0c28706f26fedf022fa593f38e3b7a6e056f",
+      "size_in_bytes": 435902
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/blas.so",
+      "file_mode": "binary",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/Users/travis/miniconda3/conda-bld/pygpu_1501121066101/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pla",
+      "sha256": "b685a478cacf9f2de4ba84ab41b5710af8e3999e2db0ed7536c3cd7ed3739bda",
+      "size_in_bytes": 76428
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/blas_api.h",
+      "path_type": "hardlink",
+      "sha256": "83d4d7df7145f6c702d07f011afa87e1b4c7ca0240d3b2eafa2767e84124c422",
+      "size_in_bytes": 5099
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/collectives.c",
+      "file_mode": "text",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+      "sha256": "4df34d9c4e101355d25b007647dc82c5c53ec70080aa7a56ec3cf0b049f768c3",
+      "size_in_bytes": 1167599
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/collectives.h",
+      "path_type": "hardlink",
+      "sha256": "3310847c34e1964ee973637005c4c6bd5220279cfa4fefce0d684a01d2dd58a0",
+      "size_in_bytes": 1330
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/collectives.so",
+      "file_mode": "binary",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/Users/travis/miniconda3/conda-bld/pygpu_1501121066101/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pla",
+      "sha256": "a745e722be8412ca2799a9968806c3ad1eb41316b1cf6fcc229882b947f3e1f4",
+      "size_in_bytes": 243664
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/collectives_api.h",
+      "path_type": "hardlink",
+      "sha256": "2da022302b86d810fc6619d6ee5101e36c81c446ffe7a74068413bede7a79a16",
+      "size_in_bytes": 7271
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/dtypes.py",
+      "path_type": "hardlink",
+      "sha256": "116a9baced8da08763d3de75e37453fe27c96e656fa0b6421f79a2d8caab8a36",
+      "size_in_bytes": 5921
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/dtypes.pyc",
+      "path_type": "hardlink",
+      "sha256": "6874da9e67ac11e0c59ded62772eae080c68505595db32bc178a48ab8392d391",
+      "size_in_bytes": 6535
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/elemwise.py",
+      "path_type": "hardlink",
+      "sha256": "baaf8d1bca582dffc7e865ab6695d3bd20fea855a48e058478d81a34a12bb9da",
+      "size_in_bytes": 3200
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/elemwise.pyc",
+      "path_type": "hardlink",
+      "sha256": "e78eddbdc7d7730c1f84284035eedee4d11e2bafc1adf4191ecf87b6ebe3cd34",
+      "size_in_bytes": 3828
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/gpuarray.c",
+      "file_mode": "text",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+      "sha256": "3edd8930ed2158a99a928db0754982d7566e763476a35b173942506e412dd635",
+      "size_in_bytes": 1855759
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/gpuarray.h",
+      "path_type": "hardlink",
+      "sha256": "f0f0b6af5df748c866bebddf9e3216528b5083082571a60e75c6c3631da37674",
+      "size_in_bytes": 1959
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/gpuarray.so",
+      "file_mode": "binary",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/Users/travis/miniconda3/conda-bld/pygpu_1501121066101/_b_env_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_placehold_pla",
+      "sha256": "e4f419e1fd2646a095d54b0487b6eeb9b48c2d437230edcad7af72e938044098",
+      "size_in_bytes": 464708
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/gpuarray_api.h",
+      "path_type": "hardlink",
+      "sha256": "2e6d62703635edd908c3297d3f0599b9efda3a9ae03ac7574fed106a2638e8ae",
+      "size_in_bytes": 13619
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/numpy_compat.h",
+      "path_type": "hardlink",
+      "sha256": "30a87fa134538b0c52b9a26f0c53bd408a1c2515aa5093edd8d56b769c64a47e",
+      "size_in_bytes": 808
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/operations.py",
+      "path_type": "hardlink",
+      "sha256": "7ed6cf8607a06b9c39b5ff504d5e80551b4aa689c8aab547ba44491a2e6e6f5e",
+      "size_in_bytes": 4070
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/operations.pyc",
+      "path_type": "hardlink",
+      "sha256": "e7fc7359887c7d508aaa75b5250c890d71a9e53a06767307ab791a6d8ccb7e92",
+      "size_in_bytes": 4996
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/reduction.py",
+      "path_type": "hardlink",
+      "sha256": "e0dd1fbc7c13571c7d39092f1c9462309057509e77c63d031a61db2f5ab5a8c4",
+      "size_in_bytes": 10101
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/reduction.pyc",
+      "path_type": "hardlink",
+      "sha256": "947dbad89f4abab905f014e30b8c86f1ade2764d26f4b81a0b1a2931b46d45fb",
+      "size_in_bytes": 10351
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/__init__.py",
+      "path_type": "hardlink",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_in_bytes": 0
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/__init__.pyc",
+      "path_type": "hardlink",
+      "sha256": "545f83641e1b27be316dc2667731f3bb9c4683389d3c27393bb2102db39f27ec",
+      "size_in_bytes": 138
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/main.py",
+      "path_type": "hardlink",
+      "sha256": "d7f756cf8b52d39e7915875968036633ca9a6efd24ef8b642df410415e245439",
+      "size_in_bytes": 4535
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/main.pyc",
+      "path_type": "hardlink",
+      "sha256": "f438d43361028c7ef011facc8a56f3003aa2ad7508b6763f998130eb70515c5e",
+      "size_in_bytes": 4371
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/support.py",
+      "path_type": "hardlink",
+      "sha256": "3d0533bfe0d767c2501dbf095f806373a0756c02da5725f7fa4791eaf26ef1bc",
+      "size_in_bytes": 5108
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/support.pyc",
+      "path_type": "hardlink",
+      "sha256": "0cc3c088b23edfb939c9caea96600bec1651489e3200219da576f7883b9def7d",
+      "size_in_bytes": 5662
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/test_basic.py",
+      "path_type": "hardlink",
+      "sha256": "95727f2dd27334564cd92dc5cc82bd97f4291ac061cf1d7c8ec300ca1eb7ba92",
+      "size_in_bytes": 2495
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/test_basic.pyc",
+      "path_type": "hardlink",
+      "sha256": "9481510bd152bd9949402315ab3c721eb2aa8b220a572dac43bf7116fb10255d",
+      "size_in_bytes": 3934
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/test_blas.py",
+      "path_type": "hardlink",
+      "sha256": "ce3a647cc974f069e69d7d7f73796a811ba854a8596b47ad3480d5d7f0dcf8b4",
+      "size_in_bytes": 8569
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/test_blas.pyc",
+      "path_type": "hardlink",
+      "sha256": "d9f951f60bfe59ae590ebc813f03ded4d1d8c12ad749090bb1cd0bc4856cf0a9",
+      "size_in_bytes": 8380
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/test_elemwise.py",
+      "path_type": "hardlink",
+      "sha256": "809c43e63059c5298dea5acc92821e7ac88c18b59a5fcce55e2c4e95ca589688",
+      "size_in_bytes": 11589
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/test_elemwise.pyc",
+      "path_type": "hardlink",
+      "sha256": "48038bab41f9063639fd35fbf42bdeaa18e7c23173d4a01d5ec436b08d68bed4",
+      "size_in_bytes": 12507
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/test_gpu_ndarray.py",
+      "path_type": "hardlink",
+      "sha256": "6f845a2d5da7750e8841d072d228cb7fbaaf749b4002a4ed69a8c374d7e15f59",
+      "size_in_bytes": 26653
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/test_gpu_ndarray.pyc",
+      "path_type": "hardlink",
+      "sha256": "77342f709f5bf29c3a6127ffb8da75299d17911114c70dcbf5dbdd165410b0a5",
+      "size_in_bytes": 33921
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/test_operations.py",
+      "path_type": "hardlink",
+      "sha256": "2912d5037fc50cd8f1b79a975308afa7e221ebb9c9dbf96802fb3978d2b2fd94",
+      "size_in_bytes": 2636
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/test_operations.pyc",
+      "path_type": "hardlink",
+      "sha256": "7fa05d1b1215e4992bbf9908b5c076d47961914abc5e44787a85a2c5c764520f",
+      "size_in_bytes": 4516
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/test_reduction.py",
+      "path_type": "hardlink",
+      "sha256": "f416a8fda33b8e378ffac3629c0f97b8937b220afa73e0dc263fe339c9a2fe27",
+      "size_in_bytes": 4434
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/test_reduction.pyc",
+      "path_type": "hardlink",
+      "sha256": "bb3722f0abb584686c68bf5ffa1476c9af8fb698f07cb06398c591fbaf2d4411",
+      "size_in_bytes": 5564
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/test_tools.py",
+      "path_type": "hardlink",
+      "sha256": "201ce0feb5b9e8b16a7a775f6fd3ac2c6edcaa9e6ba2e1ec301e6610622e98dd",
+      "size_in_bytes": 3878
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tests/test_tools.pyc",
+      "path_type": "hardlink",
+      "sha256": "580fd964e601c58b9744423f63791c8f2ade4ecc832faf617c70e9fb2657ef8a",
+      "size_in_bytes": 5823
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tools.py",
+      "path_type": "hardlink",
+      "sha256": "35badfe228dd72e7dc0475f97bb64d19c36e3121b4829ddedfe72539a04b66ff",
+      "size_in_bytes": 6392
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/tools.pyc",
+      "path_type": "hardlink",
+      "sha256": "6f7db7c4e79dcc97016a7c72295a8aba17d2b30a6c79492832f10a6276f2db0d",
+      "size_in_bytes": 7668
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/version.py",
+      "path_type": "hardlink",
+      "sha256": "3b19302ff518433f86c60da004a07e9f38fb912b19c53bfb6a33f88e6c2eba94",
+      "size_in_bytes": 94
+    },
+    {
+      "_path": "lib/python2.7/site-packages/pygpu/version.pyc",
+      "path_type": "hardlink",
+      "sha256": "5a9c21a409fcb23e9a01b0727e87c0496e814e701832514d6f3309e893db165f",
+      "size_in_bytes": 256
+    }
+  ],
+  "paths_version": 1
+}

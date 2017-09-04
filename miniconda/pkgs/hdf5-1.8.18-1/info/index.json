@@ -1,0 +1,15 @@
+{
+  "arch": "x86_64",
+  "build": "1",
+  "build_number": 1,
+  "depends": [
+    "libgfortran",
+    "zlib 1.2.8"
+  ],
+  "license": "HDF5",
+  "license_family": "BSD",
+  "name": "hdf5",
+  "platform": "osx",
+  "subdir": "osx-64",
+  "version": "1.8.18"
+}

@@ -1,0 +1,5 @@
+{
+  "home": "https://github.com/conda/conda-env",
+  "license": "BSD 3-Clause",
+  "summary": "Tools for interacting with conda environments."
+}

@@ -1,0 +1,133 @@
+{
+  "paths": [
+    {
+      "_path": "include/cblas.h",
+      "path_type": "hardlink",
+      "sha256": "df1694c28ad05c8a80b87da26c4ce15b1512680a403fa119cb3a99ad6304ac69",
+      "size_in_bytes": 45648
+    },
+    {
+      "_path": "include/f77blas.h",
+      "path_type": "hardlink",
+      "sha256": "d7b491da4d47164b46bd5dec99b6f06c62b012831ce15bb3edfce6e442c4b51d",
+      "size_in_bytes": 47356
+    },
+    {
+      "_path": "include/lapacke.h",
+      "path_type": "hardlink",
+      "sha256": "e0b41f12a8f2584bc298e0318926360c9b2800694e5e17601f2ef36cd33ca413",
+      "size_in_bytes": 1144601
+    },
+    {
+      "_path": "include/lapacke_config.h",
+      "path_type": "hardlink",
+      "sha256": "2a7596043c0caef8ea666a3baf0ab95634d1295b7106e191b141f2b80181d231",
+      "size_in_bytes": 4388
+    },
+    {
+      "_path": "include/lapacke_mangling.h",
+      "path_type": "hardlink",
+      "sha256": "7d71fdee53a1e0cd01568aba2f152f2e1e4fbb849e84d740e3b031e819fbfa22",
+      "size_in_bytes": 474
+    },
+    {
+      "_path": "include/lapacke_utils.h",
+      "path_type": "hardlink",
+      "sha256": "c78943d31c047cc66ffe2e317e46f9aeeca6343723c4b7045c1bc7b49b7205b9",
+      "size_in_bytes": 33161
+    },
+    {
+      "_path": "include/openblas_config.h",
+      "path_type": "hardlink",
+      "sha256": "2762a08be82909d92fb84d616128ab623247a6e7176f0f90999768a8a563d76b",
+      "size_in_bytes": 5076
+    },
+    {
+      "_path": "lib/cmake/openblas/OpenBLASConfig.cmake",
+      "file_mode": "text",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+      "sha256": "11689189f6903d23613927b497c7903801d5aad9d0bf41d2bf1e4a9c5f5494f8",
+      "size_in_bytes": 178
+    },
+    {
+      "_path": "lib/cmake/openblas/OpenBLASConfigVersion.cmake",
+      "path_type": "hardlink",
+      "sha256": "a96e04bd80d1c2297f7229274b5e87224bc4bed84f8ebbe8a1a43a45f51e35de",
+      "size_in_bytes": 285
+    },
+    {
+      "_path": "lib/libblas.a",
+      "path_type": "softlink",
+      "sha256": "a5e3ac524d53ad6f346d6baa9bfe8d9c2d01e85763c9221351d977234b7c67ec",
+      "size_in_bytes": 80466512
+    },
+    {
+      "_path": "lib/libblas.dylib",
+      "path_type": "softlink",
+      "sha256": "786401e94f74b57e058c47840bd5cd0457dc4ee5930ef811a9453372b5cf933c",
+      "size_in_bytes": 79020840
+    },
+    {
+      "_path": "lib/liblapack.a",
+      "path_type": "softlink",
+      "sha256": "a5e3ac524d53ad6f346d6baa9bfe8d9c2d01e85763c9221351d977234b7c67ec",
+      "size_in_bytes": 80466512
+    },
+    {
+      "_path": "lib/liblapack.dylib",
+      "path_type": "softlink",
+      "sha256": "786401e94f74b57e058c47840bd5cd0457dc4ee5930ef811a9453372b5cf933c",
+      "size_in_bytes": 79020840
+    },
+    {
+      "_path": "lib/libopenblas.a",
+      "path_type": "softlink",
+      "sha256": "a5e3ac524d53ad6f346d6baa9bfe8d9c2d01e85763c9221351d977234b7c67ec",
+      "size_in_bytes": 80466512
+    },
+    {
+      "_path": "lib/libopenblas.dylib",
+      "path_type": "softlink",
+      "sha256": "786401e94f74b57e058c47840bd5cd0457dc4ee5930ef811a9453372b5cf933c",
+      "size_in_bytes": 79020840
+    },
+    {
+      "_path": "lib/libopenblasp-r0.2.19.a",
+      "path_type": "hardlink",
+      "sha256": "a5e3ac524d53ad6f346d6baa9bfe8d9c2d01e85763c9221351d977234b7c67ec",
+      "size_in_bytes": 80466512
+    },
+    {
+      "_path": "lib/libopenblasp-r0.2.19.dylib",
+      "path_type": "hardlink",
+      "sha256": "786401e94f74b57e058c47840bd5cd0457dc4ee5930ef811a9453372b5cf933c",
+      "size_in_bytes": 79020840
+    },
+    {
+      "_path": "lib/pkgconfig/blas.pc",
+      "file_mode": "text",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+      "sha256": "eb1508b6cf736ddbef16fbdada8b2d986655ddbee69ee38a9511ae6e0b33785e",
+      "size_in_bytes": 403
+    },
+    {
+      "_path": "lib/pkgconfig/cblas.pc",
+      "file_mode": "text",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+      "sha256": "eb1508b6cf736ddbef16fbdada8b2d986655ddbee69ee38a9511ae6e0b33785e",
+      "size_in_bytes": 403
+    },
+    {
+      "_path": "lib/pkgconfig/lapack.pc",
+      "file_mode": "text",
+      "path_type": "hardlink",
+      "prefix_placeholder": "/opt/anaconda1anaconda2anaconda3",
+      "sha256": "eb1508b6cf736ddbef16fbdada8b2d986655ddbee69ee38a9511ae6e0b33785e",
+      "size_in_bytes": 403
+    }
+  ],
+  "paths_version": 1
+}

@@ -1,0 +1,50 @@
+{% set version = "0.2.19" %}
+
+package:
+  name: openblas
+  version: {{ version }}
+
+source:
+  fn: openblas-{{ version }}.tar.gz
+  url: https://github.com/xianyi/OpenBLAS/archive/v{{ version }}.tar.gz
+  sha256: 9c40b5e4970f27c5f6911cb0a28aa26b6c83f17418b69f8e5a116bb983ca8557
+  patches:
+    # Create pkg-config files, blas.pc, cblas.pc and lapack.pc
+    - pkg-config.patch
+
+build:
+  number: 2
+  skip: true  # [win]
+  track_features:
+    - vc9     # [win and py27]
+    - vc10    # [win and py34]
+    - vc14    # [win and py35]
+
+requirements:
+  build:
+    - toolchain
+    - python           # [win]
+    - perl 5.22.2.1
+    - gcc              # [unix]
+
+  run:
+    - libgfortran
+
+test:
+  commands:
+    - test -f ${PREFIX}/lib/libopenblas.a                            # [unix]
+    - test -f ${PREFIX}/lib/libopenblas.so                           # [linux]
+    - test -f ${PREFIX}/lib/libopenblas.dylib                        # [osx]
+    - if not exist %PREFIX%\\Library\\lib\\libopenblas.lib exit 1    # [win]
+
+about:
+  home: http://www.openblas.net/
+  license: BSD 3-Clause
+  summary: An optimized BLAS library based on GotoBLAS2 1.13 BSD version.
+
+extra:
+  recipe-maintainers:
+    - gillins
+    - groutr
+    - jakirkham
+    - jschueller
