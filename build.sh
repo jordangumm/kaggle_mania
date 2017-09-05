@@ -33,7 +33,11 @@ conda install -y beautifulsoup4 click pandas tqdm numpy scikit-learn lime h5py t
 
 pip install kaggle-cli
 
-mkdir -p kaggle_mania/march_mania/data/raw && cd kaggle_mania/march_mania/data/raw
-kg download -u "$USERNAME" -p "$PASSWORD" -c 'march-machine-learning-mania-2017'
+if [ ! -d "kaggle_mania/march_mania/data/raw" ]; then
+    mkdir -p kaggle_mania/march_mania/data/raw && cd kaggle_mania/march_mania/data/raw
+    kg download -u "$USERNAME" -p "$PASSWORD" -c 'march-machine-learning-mania-2017'
+fi
+
+python kaggle_mania/march_mania/generate_intermediate_data.py
 
 exit 0

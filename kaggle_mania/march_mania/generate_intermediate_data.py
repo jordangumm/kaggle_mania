@@ -13,11 +13,11 @@
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
-import os
+import os, sys
 
-
-games = pd.read_csv('data/original/RegularSeasonDetailedResults.csv')
-team_names = pd.read_csv('data/original/Teams.csv')
+current_dp = os.path.dirname(os.path.realpath(__file__))
+games = pd.read_csv(os.path.join(current_dp, 'data/raw/RegularSeasonDetailedResults.csv'))
+team_names = pd.read_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/raw/Teams.csv'))
 
 
 def get_per_minute_stat(team_wins, team_losses, stat):
@@ -38,7 +38,7 @@ def get_minutes_played(team_wins, team_losses):
 
 
 def get_per_minute_stats(team_wins, team_losses):
-    """ Return combined per minute stats for team
+    """ Return combined per minute stat differentials for team
     Arguments:
     team_wins - pandas DataFrame of won games for team in season
     team_losses - pandas DataFrame of lost games for team in season
@@ -48,10 +48,38 @@ def get_per_minute_stats(team_wins, team_losses):
     for stat in team_wins.keys():
         if stat[0] != 'W' or 'team' in stat or 'loc' in stat: continue
         stat = stat[1:]
-        output['{}'.format(stat)] = get_per_minute_stat(team_wins,team_losses,stat)
-        output['opp_{}'.format(stat)] = get_per_minute_opp_stat(team_wins,team_losses,stat)
+        output['{}'.format(stat)] = get_per_minute_stat(team_wins,team_losses,stat) - get_per_minute_opp_stat(team_wins,team_losses,stat)
     return output
 
+### Four Factors
+# Metrics that reduce stats down to factors of winning.
+# Theorized to not weigh the same with regard to winning.
+#
+def get_effective_field_goal_pct(team_wins, team_losses):
+    """ Return eFG%
+    (FGM + 0.5 * 3PM) / FGA
+
+    Should this be opponent differentiated?
+    """
+    fgm = team_wins['Wfgm'].sum() + team_losses['Lfgm'].sum()
+    fgm3 = team_wins['Wfgm3'].sum() + team_losses['Lfgm3'].sum()
+    fga = team_wins['Wfga'].sum() + team_losses['Lfga'].sum()
+    return (fgm + 0.5 + fgm3) / fga
+
+def get_turnovers_per_possession(team_wins, team_losses):
+    """ Return TOVpp
+    tov/poss
+    """
+    pass
+
+def get_offensive_rebounding_pct(team_wins, team_losses):
+    """ Return offensive rebound percentage estimate """
+    pass
+
+def get_free_throw_rate(team_wins, team_losses):
+    """ Return free throw rate """
+    pass
+### End Four Factors
 
 def get_rpi(season_games, team):
     """ A rank based on team's wins and losses plus strength of schedule
@@ -90,10 +118,40 @@ def get_rpi(season_games, team):
     oowp = get_oowp(team)
     return (wp * 0.25) + (owp * 0.50) + (oowp * 0.25)
 
-seeds = pd.read_csv('data/original/TourneySeeds.csv')
+seeds = pd.read_csv(os.path.join(current_dp,'data/raw/TourneySeeds.csv'))
 
+### Produce base statistics
 output = None
-for i, season in enumerate(tqdm(xrange(2010,2018))):
+for i, season in enumerate(tqdm(xrange(2003,2018))):
+    season_seeds = seeds[seeds['Season'] == season]
+    season_games = games[games['Season'] == season]
+    teams = set(season_games['Wteam'].unique().tolist() + season_games['Lteam'].unique().tolist())
+
+    for k, team in enumerate(tqdm(teams)):
+        team_wins = season_games[season_games['Wteam'] == team]
+        team_losses = season_games[season_games['Lteam'] == team]
+
+        team_stats = get_per_minute_stats(team_wins, team_losses)
+        team_stats['kaggle_id'] = team
+        team_stats['team_name'] = team_names[team_names['Team_Id'] == team]['Team_Name'].unique()[0]
+        team_stats['season'] = season
+
+        if type(output) == type(None):
+            output = pd.DataFrame(team_stats, index=[i+k])
+        else:
+            output = output.append(pd.DataFrame(team_stats, index=[i+k]))
+output_dp = os.path.join(current_dp, 'data/intermediate/')
+if not os.path.isdir(output_dp):
+    os.mkdir(output_dp)
+output.to_csv(os.path.join(output_dp, 'team_regular_season_stats.csv'), index=None)
+
+
+sys.exit()
+
+
+### Produce advanced statistics
+output = None
+for i, season in enumerate(tqdm(xrange(2003,2018))):
     season_seeds = seeds[seeds['Season'] == season]
     season_games = games[games['Season'] == season]
     teams = set(season_games['Wteam'].unique().tolist() + season_games['Lteam'].unique().tolist())
@@ -104,12 +162,12 @@ for i, season in enumerate(tqdm(xrange(2010,2018))):
 
         team_stats = get_per_minute_stats(team_wins, team_losses)
         team_stats['minutes_played'] = get_minutes_played(team_wins, team_losses)
-        team_stats['rpi'] = get_rpi(season_games, team)
+        #team_stats['rpi'] = get_rpi(season_games, team)
         team_stats['avg_spread'] = float((team_wins['Wscore'].sum() - team_wins['Lscore'].sum()) + (team_losses['Lscore'].sum() - team_losses['Wscore'].sum())) / float(len(team_wins) + len(team_losses))
         team_stats['kaggle_id'] = team
         team_stats['team_name'] = team_names[team_names['Team_Id'] == team]['Team_Name'].unique()[0]
         team_stats['season'] = season
-        seed = season_seeds[season_seeds['Team'] == team]['Seed'].unique()
+        #seed = season_seeds[season_seeds['Team'] == team]['Seed'].unique()
 
         if seed:
             team_stats['seed'] = int(seed[0].rstrip('a').rstrip('b')[-2:])
@@ -123,5 +181,5 @@ for i, season in enumerate(tqdm(xrange(2010,2018))):
 output_dp = 'data/intermediate/'
 if not os.path.isdir(output_dp):
     os.mkdir(output_dp)
-
-output.to_csv(os.path.join(output_dp, 'team_regular_season_stats.csv'), index=None)
+# output advanced team stats
+#output.to_csv(os.path.join(output_dp, 'advanced_team_regular_season_stats.csv'), index=None)
