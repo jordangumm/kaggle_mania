@@ -20,12 +20,12 @@ games = pd.read_csv(os.path.join(current_dp, 'data/raw/RegularSeasonDetailedResu
 team_names = pd.read_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/raw/Teams.csv'))
 
 
-def get_per_minute_stat(team_wins, team_losses, stat):
+def get_team_stat(team_wins, team_losses, stat):
     """ Return sum of specified team stat """
     return team_wins['W{}'.format(stat)].sum() + team_losses['L{}'.format(stat)].sum()
 
 
-def get_per_minute_opp_stat(team_wins, team_losses, stat):
+def get_opp_stat(team_wins, team_losses, stat):
     """ Return sum of specified stat of opponents of team played """
     return team_wins['L{}'.format(stat)].sum() + team_losses['W{}'.format(stat)].sum()
 
@@ -48,7 +48,7 @@ def get_per_minute_stats(team_wins, team_losses):
     for stat in team_wins.keys():
         if stat[0] != 'W' or 'team' in stat or 'loc' in stat: continue
         stat = stat[1:]
-        output['{}'.format(stat)] = get_per_minute_stat(team_wins,team_losses,stat) - get_per_minute_opp_stat(team_wins,team_losses,stat)
+        output['{}'.format(stat)] = float(get_team_stat(team_wins,team_losses,stat) - get_opp_stat(team_wins,team_losses,stat)) / float(get_minutes_played(team_wins, team_losses))
     return output
 
 ### Four Factors
@@ -120,6 +120,17 @@ def get_rpi(season_games, team):
 
 seeds = pd.read_csv(os.path.join(current_dp,'data/raw/TourneySeeds.csv'))
 
+
+def normalize(df):
+    result = df.copy()
+    for feature_name in df.columns:
+        if feature_name in ('kaggle_id', 'team_name', 'season'): continue
+        max_value = df[feature_name].max()
+        min_value = df[feature_name].min()
+        result[feature_name] = (df[feature_name] - min_value) / (max_value - min_value)
+    return result
+
+
 ### Produce base statistics
 output = None
 for i, season in enumerate(tqdm(xrange(2003,2018))):
@@ -132,7 +143,11 @@ for i, season in enumerate(tqdm(xrange(2003,2018))):
         team_losses = season_games[season_games['Lteam'] == team]
 
         team_stats = get_per_minute_stats(team_wins, team_losses)
+        team_stats['rpi'] = get_rpi(season_games, team)
         team_stats['kaggle_id'] = team
+        team_stats['minutes_played'] = get_minutes_played(team_wins, team_losses)
+        team_stats['avg_spread'] = float((team_wins['Wscore'].sum() - team_wins['Lscore'].sum()) + (team_losses['Lscore'].sum() - team_losses['Wscore'].sum())) / float(len(team_wins) + len(team_losses))
+
         team_stats['team_name'] = team_names[team_names['Team_Id'] == team]['Team_Name'].unique()[0]
         team_stats['season'] = season
 
@@ -140,46 +155,20 @@ for i, season in enumerate(tqdm(xrange(2003,2018))):
             output = pd.DataFrame(team_stats, index=[i+k])
         else:
             output = output.append(pd.DataFrame(team_stats, index=[i+k]))
+
+    # NORMALIZE IN FINAL DATA, NOT RIGHT NOW
+    # min-max normalize per season
+    #output[output['season'] == season] = normalize(output[output['season'] == season])
+
+# NORMALIZE IN FINAL DATA, NOT RIGHT NOW
+# normalize-adjust stats by rpi (strength of schedule and winning percentage)
+for stat in team_stats.columns:
+    if stat in ['kaggle_id', 'team_name', 'season', 'rpi']: continue
+
+
+
+
 output_dp = os.path.join(current_dp, 'data/intermediate/')
 if not os.path.isdir(output_dp):
     os.mkdir(output_dp)
 output.to_csv(os.path.join(output_dp, 'team_regular_season_stats.csv'), index=None)
-
-
-sys.exit()
-
-
-### Produce advanced statistics
-output = None
-for i, season in enumerate(tqdm(xrange(2003,2018))):
-    season_seeds = seeds[seeds['Season'] == season]
-    season_games = games[games['Season'] == season]
-    teams = set(season_games['Wteam'].unique().tolist() + season_games['Lteam'].unique().tolist())
-
-    for k, team in enumerate(tqdm(teams)):
-        team_wins = season_games[season_games['Wteam'] == team]
-        team_losses = season_games[season_games['Lteam'] == team]
-
-        team_stats = get_per_minute_stats(team_wins, team_losses)
-        team_stats['minutes_played'] = get_minutes_played(team_wins, team_losses)
-        #team_stats['rpi'] = get_rpi(season_games, team)
-        team_stats['avg_spread'] = float((team_wins['Wscore'].sum() - team_wins['Lscore'].sum()) + (team_losses['Lscore'].sum() - team_losses['Wscore'].sum())) / float(len(team_wins) + len(team_losses))
-        team_stats['kaggle_id'] = team
-        team_stats['team_name'] = team_names[team_names['Team_Id'] == team]['Team_Name'].unique()[0]
-        team_stats['season'] = season
-        #seed = season_seeds[season_seeds['Team'] == team]['Seed'].unique()
-
-        if seed:
-            team_stats['seed'] = int(seed[0].rstrip('a').rstrip('b')[-2:])
-        else:
-            team_stats['seed'] = 0
-
-        if type(output) == type(None):
-            output = pd.DataFrame(team_stats, index=[i+k])
-        else:
-            output = output.append(pd.DataFrame(team_stats, index=[i+k]))
-output_dp = 'data/intermediate/'
-if not os.path.isdir(output_dp):
-    os.mkdir(output_dp)
-# output advanced team stats
-#output.to_csv(os.path.join(output_dp, 'advanced_team_regular_season_stats.csv'), index=None)
