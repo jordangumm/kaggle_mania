@@ -49,7 +49,7 @@ def get_team_stats(team_wins, team_losses):
         if stat[0] != 'W' or 'team' in stat or 'loc' in stat: continue
         stat = stat[1:]
         output['{}'.format(stat)] = float(get_team_stat(team_wins,team_losses,stat))
-        output['opp_{}'].format(stat)] = float(get_opp_stat(team_wins,team_losses,stat))
+        output['opp_{}'.format(stat)] = float(get_opp_stat(team_wins,team_losses,stat))
     return output
 
 
@@ -106,6 +106,13 @@ def generate_base_stats(output_fp):
             team_losses = season_games[season_games['Lteam'] == team]
 
             team_stats = get_team_stats(team_wins, team_losses)
+
+            # shooting %
+            team_stats['fg_pct'] = float(team_stats['fgm']) / float(team_stats['fga'])
+            team_stats['fg_opp_pct'] = float(team_stats['opp_fgm']) / float(team_stats['opp_fga'])
+            team_stats['fg3_pct'] = float(team_stats['fgm3']) / float(team_stats['fga3'])
+            team_stats['fg3_opp_pct'] = float(team_stats['opp_fgm3']) / float(team_stats['opp_fga3'])
+
             team_stats['rpi'] = get_rpi(season_games, team)
             team_stats['kaggle_id'] = team
             team_stats['minutes_played'] = get_minutes_played(team_wins, team_losses)
