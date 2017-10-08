@@ -210,29 +210,6 @@ def create_classification_games(stats, games, season, game_type):
     output.close()
 
 
-def filter_biased_stats(stats):
-    """ Return dataframe without biased stats
-
-    Most total stats indicate team advancement
-    """
-    del stats['opp_trb']
-    return stats
-
-
-def filter_out_nontourney_teams(stats, games):
-    """
-
-    Remove bias inherent in nontourney teams
-    - including bad team stats inflates all tournament team stats
-    """
-    tourney_teams = []
-    [tourney_teams.append(t) for t in games['Wteam']]
-    [tourney_teams.append(t) for t in games['Lteam']]
-    tourney_teams = set(tourney_teams)
-
-    return stats[stats['kaggle_id'].isin(tourney_teams)]
-
-
 @click.command()
 @click.argument('game_type')
 def run(game_type):
@@ -252,15 +229,15 @@ def run(game_type):
     if not os.path.exists('data/games'):
         os.mkdir('data/games')
 
+    stats = pd.read_csv('data/intermediate/team_regular_season_stats.csv')
     for season in tqdm(xrange(2010,2018)):
-        stats = pd.read_csv('data/intermediate/team_regular_season_stats.csv')
-        metrics = pd.read_csv('data/intermediate/player_metrics.csv')
+        # metrics = pd.read_csv('data/intermediate/player_metrics.csv')
 
-        stats = stats[stats['season'] == season]
-        metrics = metrics[metrics['season'] == season]
+        season_stats = stats[stats['season'] == season]
+        #metrics = metrics[metrics['season'] == season]
 
-        stats = stats.merge(metrics)
-        #stats = filter_out_nontourney_teams(stats, games[games['Season'] == season])
+        #stats = stats.merge(metrics)
+        # stats = filter_out_nontourney_teams(stats, games[games['Season'] == season])
 
         stats = add_possessions(stats)
         stats = add_offensive_efficiency(stats)
@@ -271,7 +248,7 @@ def run(game_type):
         stats = add_turnovers_per_possession(stats)
         stats = add_rebounding_percentages(stats)
         stats = add_free_throw_rate(stats)
-	stats = add_efficient_offensive_production(stats)
+	    stats = add_efficient_offensive_production(stats)
 
         stats = add_pythag_win_expectation(stats)
 
