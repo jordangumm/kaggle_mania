@@ -194,22 +194,25 @@ def select_model(train_dp, ngen, model_type):
     """ Determine best model of model type for training data
 
     The training CSV referenced by train_dp is assumed to have classification
-    listed first in column named 'class' followed by features to be normalized.
+    listed first in column named 'won' followed by features to be normalized.
     """
     df = pd.read_csv(train_dp)
 
     df = df.fillna(0.0) # experiment with interpolation methods
     features = df.keys().tolist()
-    features.remove('class')
+    features.remove('won')
 
-    def normalize(data):
-        for key in data.keys():
-            if not key in features: continue
-            mean = data[key].mean()
-            std = data[key].std()
-            data.loc[:, key] = data[key].apply(lambda x: x - mean / std)
-        return data
-    df = normalize(df)
+    print features
+    sys.exit()
+
+    #def normalize(data):
+    #    for key in data.keys():
+    #        if not key in features: continue
+    #        mean = data[key].mean()
+    #        std = data[key].std()
+    #        data.loc[:, key] = data[key].apply(lambda x: x - mean / std)
+    #    return data
+    #df = normalize(df)
 
     selector = ModelSelector(train_df=df, features=features,
                                     eval_type='bayes_loss', ngen=ngen,

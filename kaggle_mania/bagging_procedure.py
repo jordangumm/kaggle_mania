@@ -140,16 +140,14 @@ def train_with_bagging(train_df, features, verbose, batch_size, num_epochs,
 @click.option('-num_baggs', type=click.INT, default=1)
 @click.option('-model_type', type=click.STRING, default='maxout')
 def run_bagging(num_nodes, num_layers, dropout, learning_rate, eval_type, batch_size,
-        early_stop, verbose, max_epochs, num_baggs, model_type):
-        if i == 0:
-
-            df = pd.read_csv('data/games/{}_tourney_diff_games.csv'.format(s))
-            df['season'] = s
-        else:
-            tmp = pd.read_csv('data/games/{}_tourney_diff_games.csv'.format(s))
-            tmp['season'] = s
-            df = df.append(tmp)
-
+                                early_stop, verbose, max_epochs, num_baggs, model_type):
+    if i == 0:
+        df = pd.read_csv('data/games/{}_tourney_diff_games.csv'.format(s))
+        df['season'] = s
+    else:
+        tmp = pd.read_csv('data/games/{}_tourney_diff_games.csv'.format(s))
+        tmp['season'] = s
+        df = df.append(tmp)
     df = df.fillna(0.0)
 
     features = df.keys().tolist()
