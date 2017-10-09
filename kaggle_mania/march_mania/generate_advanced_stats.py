@@ -100,6 +100,8 @@ def run(input_fp, output_fp):
             team_output['dr_pct'] = get_defensive_rebounding_pct(drb=team_season_stats['dr'], opp_orb=team_season_stats['opp_or'])
             team_output['opp_dr_pct'] = get_defensive_rebounding_pct(drb=team_season_stats['opp_dr'], opp_orb=team_season_stats['or'])
 
+            team_output['rpi'] = team_season_stats['rpi']
+
             if type(output) == type(None):
                 output = pd.DataFrame(team_output, index=[i+k])
             else:

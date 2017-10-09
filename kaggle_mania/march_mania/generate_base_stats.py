@@ -130,7 +130,7 @@ def generate_base_stats(output_fp):
 
 
 @click.command()
-@click.argument('output_dp')
+@click.argument('output_dp', default='data/intermediate')
 def run(output_dp):
     """ """
     if not os.path.isdir(output_dp):

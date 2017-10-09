@@ -21,6 +21,18 @@ GAMES = pd.read_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)),
                                 'data/raw/TourneyDetailedResults.csv'))
 
 
+def min_max_rpi_normalize(df):
+    result = df.copy()
+    for feature_name in df.columns:
+        if feature_name in ('kaggle_id', 'team_one', 'team_two', 'season', 'rpi', 'team_name'): continue
+        result[feature_name] = result[feature_name] / result['rpi']
+        max_value = result[feature_name].max()
+        min_value = result[feature_name].min()
+
+        result[feature_name] = result[feature_name].apply(lambda x:  (x - min_value) / (max_value - min_value))
+    return result
+
+
 
 def create_classification_games(stats, games, season, game_type):
     output = open('data/games/{}_{}_games.csv'.format(season, game_type), 'w+')
@@ -38,7 +50,6 @@ def create_classification_games(stats, games, season, game_type):
     header = [f for f in stats.keys() if f not in ['team_name', 'season', 'kaggle_id']]
     diff_output.write(','.join([s for s in header]))
     diff_output.write('\n')
-
 
     for game in tqdm(games[games['Season'] == season].iterrows()):
         game = game[1]
@@ -85,24 +96,12 @@ def create_classification_games(stats, games, season, game_type):
     output.close()
 
 
-def min_max_normalize(df):
-    result = df.copy()
-    for feature_name in df.columns:
-        if feature_name in ('kaggle_id', 'team_name', 'season', 'rpi'): continue
-        max_value = df[feature_name].max()
-        min_value = df[feature_name].min()
-        result[feature_name] = (df[feature_name] - min_value) / (max_value - min_value)
-    return result
-
-
 def create_base_game_examples(stats, output_fp):
     """ """
     output = []
     for i, season in enumerate(tqdm(stats['season'].unique())):
 
         season_stats = stats[stats['season'] == season]
-        normalized_season_stats = min_max_normalize(season_stats)
-
         season_games = GAMES[GAMES['Season'] == season]
 
         for k, game in season_games.iterrows():
@@ -119,30 +118,23 @@ def create_base_game_examples(stats, output_fp):
 
             game_entry['season'] = season
             game_entry['team_one'] = team_one['team_name'].unique()[0]
+            game_entry['team_one_kaggle'] = team_one['kaggle_id'].unique()[0]
             game_entry['team_two'] = team_two['team_name'].unique()[0]
-
-            # 2PT %
-            game_entry['fg_pct'] = team_one['fg_pct'])
-            game_entry['fg_opp_pct'] = team_one['fg_opp_pct']
-
-            game_entry['opp_fg_pct'] = team_two['fg_pct']
-            game_entry['opp_fg_opp_pct'] = team_two['fg_opp_pct']
-
-            # 3PT %
-            game_entry['fg3_pct'] = team_one['fg3_pct']
-            game_entry['fg3_opp_pct'] = team_one['fg3_opp_pct']
-
-            game_entry['opp_fg3_pct'] = team_two['fg3_pct']
-            game_entry['opp_fg3_opp_pct'] = team_two['fg3_opp_pct']
+            game_entry['team_two_kaggle'] = team_two['kaggle_id'].unique()[0]
 
             # Per minute stats
             for stat_name in season_stats.columns:
-                break
+                if stat_name in ('season', 'team_name', 'kaggle_id', 'minutes_played'): continue
+                game_entry[stat_name] = team_one[stat_name].unique()[0] / team_one['minutes_played'].unique()[0]
+                game_entry['opp_{}'.format(stat_name)] = team_two[stat_name].unique()[0] / team_one['minutes_played'].unique()[0]
 
             if type(output) == type(None):
                 output = pd.DataFrame(game_entry, index=[i+k])
             else:
                 output = output.append(pd.DataFrame(game_entry, index=[i+k]))
+
+        output[output['season'] == season] = min_max_rpi_normalize(output[output['season'] == season])
+    del output['rpi']
 
     output.to_csv(output_fp, index=None)
 
