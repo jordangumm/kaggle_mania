@@ -4,7 +4,7 @@ import os
 
 class ModelSelector(WorkflowRunner):
     def workflow(self):
-        self.addTask('model_selector', ncores=4, command=['python', 'model_selection.py',
+        self.addTask('model_selector', nCores=4, command=['python', 'model_selection.py',
                       '/home/ubuntu/kaggle_mania/kaggle_mania/march_mania/data/final/base_games.csv'])
 
 if __name__ == "__main__":
