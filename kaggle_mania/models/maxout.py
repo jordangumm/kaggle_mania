@@ -54,8 +54,8 @@ class Maxout():
         self.loss = categorical_crossentropy(self.prediction, self.target_var)
         self.loss = aggregate(self.loss, mode='mean')
 
-	if not os.path.exists('output/models/'):
-	    os.mkdir('output/models')
+	if not os.path.exists('models'):
+	    os.mkdir('models')
 
         # L2 regularization with weight decay
         weightsl2 = lasagne.regularization.regularize_network_params(self.network,
@@ -215,7 +215,7 @@ class Maxout():
             val_acc, val_loss = self.get_validation_metrics(val_X, val_y)
 
             if bayes_val_loss < best_bayes_loss:
-                self.save_network('output/models/model.pkl')
+                self.save_network('models/model.pkl')
                 best_bayes_loss = bayes_val_loss
                 best_val_loss = val_loss # track raw validation loss with bayes
                 since_best = 0
@@ -235,7 +235,7 @@ class Maxout():
             if since_best > early_stop_rounds:
                 break
 
-        self.network = self.load_network('output/models/model.pkl')
+        self.network = self.load_network('models/model.pkl')
         if self.verbose:
             print 'best val loss: {}'.format(best_val_loss)
         return self.predict_proba(val_X)

@@ -105,7 +105,7 @@ class ModelSelector():
 
         eta: learning rate
         """
-        num_layer_min, num_layer_max = 1, 2
+        num_layer_min, num_layer_max = 1, 1
         num_nodes_min, num_nodes_max = 2, 100
         dropout_min, dropout_max = 0.1, 0.5
         decay_min, decay_max = 1e-4, 1e-1
@@ -137,9 +137,10 @@ class ModelSelector():
         """ """
         def write_generation_results(pop, generation, overwrite=False):
             """ """
+            if not os.path.exists('output'): os.mkdir('output')
             write_type = 'w+'
             if overwrite: write_type = 'w'
-            output = open('output/models/{}_{}_performance.csv'.format(self.model_type,
+            output = open('output/{}_{}_performance.csv'.format(self.model_type,
                                         self.test_df['season'].unique()[0]), write_type)
             if overwrite: output.write('generation,num_layers,num_nodes,dropout_p,weight_decay,eta,avg_loss\n')
             for p in pop:
@@ -201,20 +202,16 @@ def select_model(train_dp, ngen, model_type):
     df = df.fillna(0.0) # experiment with interpolation methods
     features = df.keys().tolist()
     features.remove('won')
+    features.remove('season')
+    features.remove('team_one')
+    features.remove('team_one_kaggle')
+    features.remove('team_two')
+    features.remove('team_two_kaggle')
 
-    print features
-    sys.exit()
+    train_df = df[df['season'] < 2010]
+    test_df = df[df['season'] == 2010]
 
-    #def normalize(data):
-    #    for key in data.keys():
-    #        if not key in features: continue
-    #        mean = data[key].mean()
-    #        std = data[key].std()
-    #        data.loc[:, key] = data[key].apply(lambda x: x - mean / std)
-    #    return data
-    #df = normalize(df)
-
-    selector = ModelSelector(train_df=df, features=features,
+    selector = ModelSelector(train_df=train_df, test_df=test_df, features=features,
                                     eval_type='bayes_loss', ngen=ngen,
                                     model_type=model_type)
     selector.select_best_model()
