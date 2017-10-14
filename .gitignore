@@ -4,3 +4,6 @@ data
 output
 marchmania/data
 *miniconda*
+*nohup.out
+*workflow_runner
+*.pkl

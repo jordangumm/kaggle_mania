@@ -51,7 +51,7 @@ def train_with_bagging(train_df, features, verbose, batch_size, num_epochs,
     print 'train seasons: {}-{}'.format(min(train_df['season'].unique()), max(train_df['season'].unique()))
     print 'num features: {}'.format(len(features))
 
-    kf = KFold(n_splits=10)
+    kf = KFold(n_splits=5)
     kf.get_n_splits(train_df)
 
     holdout_losses = []

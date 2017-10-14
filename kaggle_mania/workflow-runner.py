@@ -9,4 +9,5 @@ class ModelSelector(WorkflowRunner):
 
 if __name__ == "__main__":
     model_selector = ModelSelector()
-    model_selector.run(mode='local', dataDirRoot=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'workflow_runner'))
+    model_selector.run(mode='local', nCores=4,
+                       dataDirRoot=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'workflow_runner'))

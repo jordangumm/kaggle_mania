@@ -24,7 +24,7 @@ GAMES = pd.read_csv(os.path.join(os.path.dirname(os.path.realpath(__file__)),
 def min_max_rpi_normalize(df):
     result = df.copy()
     for feature_name in df.columns:
-        if feature_name in ('kaggle_id', 'team_one', 'team_two', 'season', 'rpi', 'team_name'): continue
+        if feature_name in ('kaggle_id', 'team_one', 'team_two', 'season', 'rpi', 'team_name', 'won'): continue
         result[feature_name] = result[feature_name] / result['rpi']
         max_value = result[feature_name].max()
         min_value = result[feature_name].min()
